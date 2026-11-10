@@ -146,3 +146,27 @@ The user explicitly chose a separate app, not another iXDrive page.
 - Full `npm test` passed. All three apps built in preview mode; cards, favourites
   and imperial units were rendered and checked. No G08 vehicle validation,
   SDK build, installation or remote push has been performed.
+
+## iX Observatory — 10 November 2026
+
+The user requested a separate iX Observatory app after discussing a component
+view with battery, motor and coolant temperatures and changes over time.
+
+- `apps/ixobservatory`: Overview, Temperatures and Cells pages, own app identity
+  and icon. Direct read-only collection; does not depend on iXDrive being open.
+- Existing iXDrive battery candidate layouts are copied into the app config.
+  Motor candidates are empty, and the UI leaves motor temperature unavailable.
+  No new verified G08 decoding is claimed. Battery current/power are signed
+  positive out of the pack. The schematic depicts components, not coolant routing.
+- One request at a time, 5-second cycle timer, backoff after repeated failures,
+  and the established 3-minute movement / 10-minute interaction activity limits.
+  The app adds its own polling if run alongside iXDrive; no vehicle writes.
+- Independent timestamp expiry, synchronized voltage/current, explicit missing
+  values and segmented 10/30/60-minute charts. History is in memory only, bounded
+  to 720 points. Demo is explicit and isolated, including in-flight replies.
+- Up to 512 cells supported, with 96 per page. No physical G08 cell count assumed.
+  Celsius default; Fahrenheit configurable. Icon source: make_ixobservatory_icon.js.
+- Full `npm test` passed, including seven Observatory checks. Preview build
+  passed; all three pages, missing data and Fahrenheit layouts were reviewed.
+  Tests: kit/tools/test_ixobservatory.js. Vehicle validation and an SDK build
+  remain outstanding; no installation has been requested or performed.

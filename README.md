@@ -31,6 +31,12 @@ Saved journey cards from iXDrive, with distance, energy, duration, outside
 temperature, labels and favourites. Runs as its own app.
 [App guide](apps/tripcapsule/README.md).
 
+## iX Observatory
+
+A battery and thermal overview, temperature charts and cell voltages. Runs
+independently of iXDrive; G08 readings require validation.
+[App guide](apps/ixobservatory/README.md).
+
 ## Development
 
 Requires Node.js 22+ and Python 3.10+. Builds are English-only.

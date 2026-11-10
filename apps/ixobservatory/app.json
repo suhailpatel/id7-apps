@@ -1,0 +1,301 @@
+{
+  "id": "ixobservatory",
+  "title": "iX Observatory",
+  "description": "Read-only battery, electrical and thermal observatory for BMW iDrive 7. G08 diagnostic candidates require validation.",
+  "version": "0.1.0",
+  "vendor": "custom",
+  "loggingId": "OK2P",
+  "iconGlyph": "iO",
+  "signals": {
+    "com.harman.infotainment.systemfunctions.tasu.tasu.InternalTasu": {
+      "_instances": "SystemFunctionsInternalTasuInst1",
+      "_methods": [
+        "sendTasuRequest"
+      ],
+      "_broadcasts": [
+        "sendTasuResponse"
+      ]
+    },
+    "de.bmw.infrastructure.EnvironmentalInformation": {
+      "ExteriorTemperature": "s"
+    },
+    "de.bmw.infotainment.vehicle.Vehicle2": {
+      "statusCarSpeed2": "rs"
+    }
+  },
+  "screens": [
+    {
+      "name": "MAIN",
+      "kind": "canvas",
+      "title": "iX Observatory",
+      "buttons": [
+        [
+          "BTN_PREV",
+          "Previous page"
+        ],
+        [
+          "BTN_NEXT",
+          "Next page"
+        ],
+        [
+          "BTN_DETAIL",
+          "Chart window / next cells"
+        ],
+        [
+          "BTN_SETTINGS",
+          "Settings"
+        ]
+      ]
+    }
+  ],
+  "settings": [
+    {
+      "key": "tempUnit",
+      "label": "Temperature unit",
+      "type": "choice",
+      "default": "c",
+      "options": [
+        [
+          "c",
+          "Celsius"
+        ],
+        [
+          "f",
+          "Fahrenheit"
+        ]
+      ]
+    },
+    {
+      "key": "theme",
+      "label": "Colour theme",
+      "type": "choice",
+      "default": "ice",
+      "options": [
+        [
+          "m_red",
+          "M Red"
+        ],
+        [
+          "m_tricolour",
+          "M Tricolour"
+        ],
+        [
+          "ice",
+          "Ice White"
+        ],
+        [
+          "amber",
+          "Night Amber"
+        ]
+      ]
+    },
+    {
+      "key": "layout",
+      "label": "Screen layout",
+      "type": "choice",
+      "default": "full",
+      "options": [
+        [
+          "full",
+          "Full screen"
+        ],
+        [
+          "standard",
+          "Standard"
+        ]
+      ]
+    },
+    {
+      "key": "renderer",
+      "label": "Renderer",
+      "type": "choice",
+      "default": "auto",
+      "options": [
+        [
+          "auto",
+          "GPU 60 fps (default)"
+        ],
+        [
+          "software",
+          "Software"
+        ]
+      ]
+    },
+    {
+      "key": "demo",
+      "label": "Demo data",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Never"
+        ],
+        [
+          "on",
+          "Always"
+        ]
+      ]
+    }
+  ],
+  "config": {
+    "comment": "Inherited iXDrive battery candidates, not validated on G08. Motor temperature has no mapped candidate. Read-only; no diagnostic session changes or writes.",
+    "ecu": 7,
+    "powerSign": -1,
+    "groups": {
+      "hvV": [
+        {
+          "did": "DDB4",
+          "timeoutMs": 600,
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          },
+          "note": "confirmed on the X5 45e"
+        },
+        {
+          "did": "DD68",
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          }
+        },
+        {
+          "did": "DD66",
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          }
+        },
+        {
+          "did": "DDEF",
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 1,
+              "min": 150,
+              "max": 500
+            }
+          }
+        }
+      ],
+      "hvI": [
+        {
+          "did": "DD69",
+          "timeoutMs": 600,
+          "fields": {
+            "a": {
+              "bytes": 4,
+              "factor": 0.01,
+              "signed": true,
+              "min": -2000,
+              "max": 2000
+            }
+          }
+        }
+      ],
+      "soc": [
+        {
+          "did": "DDBC",
+          "fields": {
+            "pct": {
+              "bytes": 2,
+              "factor": 0.1,
+              "min": 0,
+              "max": 100
+            }
+          }
+        }
+      ],
+      "cellT": [
+        {
+          "did": "DDC0",
+          "fields": {
+            "min": {
+              "at": 0,
+              "bytes": 2,
+              "factor": 0.01,
+              "signed": true,
+              "min": -40,
+              "max": 80
+            },
+            "max": {
+              "at": 2,
+              "bytes": 2,
+              "factor": 0.01,
+              "signed": true,
+              "min": -40,
+              "max": 80
+            },
+            "avg": {
+              "at": 4,
+              "bytes": 2,
+              "factor": 0.01,
+              "signed": true,
+              "min": -40,
+              "max": 80
+            }
+          }
+        }
+      ],
+      "coolant": [
+        {
+          "did": "DD6C",
+          "fields": {
+            "t": {
+              "bytes": 2,
+              "factor": 0.01,
+              "signed": true,
+              "min": -40,
+              "max": 100
+            }
+          }
+        }
+      ],
+      "cellV": [
+        {
+          "did": "DFA5",
+          "array": {
+            "bytes": 2,
+            "factor": 0.001,
+            "min": 2.5,
+            "max": 4.4
+          },
+          "note": "every cell's voltage, 2 bytes each (96 on the X5 45e): found with the Scan page"
+        },
+        {
+          "did": "DDBF",
+          "fields": {
+            "min": {
+              "at": 0,
+              "bytes": 2,
+              "factor": 0.001,
+              "min": 2.5,
+              "max": 4.4
+            },
+            "max": {
+              "at": 2,
+              "bytes": 2,
+              "factor": 0.001,
+              "min": 2.5,
+              "max": 4.4
+            }
+          }
+        }
+      ],
+      "motor": []
+    }
+  }
+}
