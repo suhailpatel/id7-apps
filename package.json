@@ -1,0 +1,16 @@
+{
+  "name": "id7-apps",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node kit/tools/test_all.js",
+    "new:app": "node kit/tools/create_app.js",
+    "build:preview": "python3 kit/tools/build.py --preview-only",
+    "build": "python3 kit/tools/build.py",
+    "preview": "node kit/tools/preview.js",
+    "emulator": "node kit/tools/emu.js"
+  }
+}
