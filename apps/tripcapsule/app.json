@@ -45,7 +45,7 @@
       "key": "distUnit",
       "label": "Distance unit",
       "type": "choice",
-      "default": "km",
+      "default": "mi",
       "options": [
         [
           "km",

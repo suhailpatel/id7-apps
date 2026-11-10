@@ -23,7 +23,7 @@ test('Trip Capsule rejects demo, stale, future and malformed transport; retentio
 
 test('Trip Capsule UI imports cards, persists labels/favourites, isolates demo and survives restarts',async()=>{
     env.now=T;env.shared=packet({journeys:[journey()]},env.now);const b=await boot('tripcapsule');
-    assert((await b.draw()).includes('1.0'));await b.clicks.BTN_LABEL();await b.clicks.BTN_STAR();
+    assert((await b.draw()).includes('0.6'));assert((await b.draw()).includes('mi recorded'));await b.clicks.BTN_LABEL();await b.clicks.BTN_STAR();
     const file=path.join(b.dir,'capsules.json'),saved=fs.readFileSync(file,'utf8');assert(JSON.parse(saved).cards[0].star);
     b.set('demo','on');await b.clicks.BTN_LABEL();await b.clicks.BTN_STAR();b.exit();assert.strictEqual(fs.readFileSync(file,'utf8'),saved);
     env.shared={...env.shared,demo:true};b.set('demo','off');assert((await b.draw()).includes('SAVED CARDS'));

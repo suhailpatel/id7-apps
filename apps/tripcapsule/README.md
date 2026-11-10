@@ -36,4 +36,5 @@ npm run preview -- dist/tripcapsule /tmp/tripcapsule-preview
 npm run emulator -- tripcapsule
 ```
 
-Demo defaults off in the car. Display units support km/miles and Celsius/Fahrenheit.
+Demo defaults off in the car. Distance defaults to miles; kilometres remain selectable in Settings.
+Temperature supports Celsius/Fahrenheit. Existing saved unit choices are retained.

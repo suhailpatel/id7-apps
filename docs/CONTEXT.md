@@ -17,6 +17,8 @@ Source revision: `8048eb091a20c5e2bfe36cda96e938472d2dfdc5`.
   estimates. Unknown data stays blank.
 - Prefer a polished dashboard, concise labels and brief explanations. The user
   asked for more telemetry and a visually useful layout rather than long prose.
+- Miles are the default distance unit in iXDrive and Trip Capsule; kilometres
+  remain selectable. Existing saved unit preferences are retained.
 - English is sufficient. The new workspace intentionally omits translation
   catalogs and translation maintenance; preserve original copyright notices.
 - Move the app and working context here, prepare the repo for future apps, and

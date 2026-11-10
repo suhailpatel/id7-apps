@@ -174,6 +174,7 @@ const checks = [
         for (const k of ['designKwh','gaugeKw','range20','model']) assert(!(k in settings), k + ' must be automatic');
         assert.strictEqual(settings.reserve, '0');
         assert.strictEqual(settings.demo, 'off');
+        assert.strictEqual(settings.distUnit, 'mi');
         assert(!('hybrid' in settings));
         assert(!SPEC.signals['de.bmw.infotainment.vehicle.CDS']);
         assert.deepStrictEqual(SPEC.config.battery.soh, [], 'no unverified SOH decoder');
@@ -202,7 +203,7 @@ const checks = [
             b.signal('ExteriorTemperature', {temperatureExterior: 120}); // 20 C
             await b.read(); await b.draw();
             const range = b.texts.find(t => t.x === 48 && t.y === 196);
-            assert.strictEqual(range.str, reserve === '0' ? '40' : '0');
+            assert.strictEqual(range.str, reserve === '0' ? '25' : '0');
             assert(!b.texts.some(t => /HYBRID|engine|held at/i.test(t.str)));
         }
     }],
