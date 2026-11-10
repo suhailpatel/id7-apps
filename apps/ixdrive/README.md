@@ -144,3 +144,11 @@ recorded in `icon-prompt.txt`. The build copies the icon directly.
 Synthetic tests cover independent identity, low SOC, arrival reserve, missing
 signals, range and capacity learning, power scaling, energy integration, charge
 history across sleep, regen, stale readings, parked polling and page rendering.
+
+## Trip Capsule integration
+
+The separate [Trip Capsule app](../tripcapsule/README.md) reads journey summaries
+published by iXDrive to `/tmp/mgu-ixdrive-trips.json` every five seconds. This
+adds no vehicle polling. Real summaries contain up to 200 completed journeys and
+the current journey; demo mode publishes only a demo marker. The file is readable
+by other local apps, contains no GPS route, and is written atomically.

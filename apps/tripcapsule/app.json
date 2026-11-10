@@ -1,0 +1,149 @@
+{
+  "id": "tripcapsule",
+  "title": "Trip Capsule",
+  "description": "Saved journey cards from iXDrive, with distance, duration, energy, temperature, labels and favourites.",
+  "version": "0.1.0",
+  "vendor": "custom",
+  "loggingId": "OOI1",
+  "iconGlyph": "TC",
+  "signals": {},
+  "screens": [
+    {
+      "name": "MAIN",
+      "kind": "canvas",
+      "title": "Trip Capsule",
+      "buttons": [
+        [
+          "BTN_NEWER",
+          "Newer trip"
+        ],
+        [
+          "BTN_OLDER",
+          "Older trip"
+        ],
+        [
+          "BTN_STAR",
+          "Favourite"
+        ],
+        [
+          "BTN_LABEL",
+          "Trip label"
+        ],
+        [
+          "BTN_FILTER",
+          "All / favourites"
+        ],
+        [
+          "BTN_SETTINGS",
+          "Settings"
+        ]
+      ]
+    }
+  ],
+  "settings": [
+    {
+      "key": "distUnit",
+      "label": "Distance unit",
+      "type": "choice",
+      "default": "km",
+      "options": [
+        [
+          "km",
+          "km"
+        ],
+        [
+          "mi",
+          "miles"
+        ]
+      ]
+    },
+    {
+      "key": "tempUnit",
+      "label": "Temperature unit",
+      "type": "choice",
+      "default": "c",
+      "options": [
+        [
+          "c",
+          "Celsius"
+        ],
+        [
+          "f",
+          "Fahrenheit"
+        ]
+      ]
+    },
+    {
+      "key": "theme",
+      "label": "Colour theme",
+      "type": "choice",
+      "default": "ice",
+      "options": [
+        [
+          "m_red",
+          "M Red"
+        ],
+        [
+          "m_tricolour",
+          "M Tricolour"
+        ],
+        [
+          "ice",
+          "Ice White"
+        ],
+        [
+          "amber",
+          "Night Amber"
+        ]
+      ]
+    },
+    {
+      "key": "layout",
+      "label": "Screen layout",
+      "type": "choice",
+      "default": "full",
+      "options": [
+        [
+          "full",
+          "Full screen"
+        ],
+        [
+          "standard",
+          "Standard"
+        ]
+      ]
+    },
+    {
+      "key": "renderer",
+      "label": "Renderer",
+      "type": "choice",
+      "default": "auto",
+      "options": [
+        [
+          "auto",
+          "GPU 60 fps (default)"
+        ],
+        [
+          "software",
+          "Software"
+        ]
+      ]
+    },
+    {
+      "key": "demo",
+      "label": "Demo data",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Never"
+        ],
+        [
+          "on",
+          "Always"
+        ]
+      ]
+    }
+  ]
+}

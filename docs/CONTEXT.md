@@ -71,7 +71,7 @@ The target calculates an estimate; it does not control the car's charging limit.
 
 ## Verified and unverified
 
-Software has 22 iXDrive integration/render checks, 8 history checks and 5 TyreWatch checks, plus shared
+Software has 23 iXDrive integration/render checks, 8 history checks and 9 new-app checks, plus shared
 runtime/DID tests. Earlier previews were checked for English layouts, missing
 readings, kilometres/miles and Celsius/Fahrenheit. New repo checks are recorded
 in the migration commit(s); run `npm test` and rebuild after changing source.
@@ -126,3 +126,21 @@ For another app, run `npm run new:app -- app_id "App Title"` and follow
   Tests: `kit/tools/test_tyrewatch.js` (five checks).
 - Demo and empty-history previews were checked. No G08 vehicle validation or
   installation has been performed.
+
+## Trip Capsule — 10 November 2026
+
+The user explicitly chose a separate app, not another iXDrive page.
+
+- `apps/tripcapsule`: independent journey cards, preset labels, favourites and
+  offline saved browsing. No free-text notes yet. Retains the latest 200 cards,
+  including favourites. No GPS or cloud. Data and annotations are in capsules.json.
+- iXDrive publishes a versioned real journey summary every 5 seconds to
+  `/tmp/mgu-ixdrive-trips.json`, with an explicit demo marker instead of synthetic
+  records in demo mode. Trip Capsule imports fresh summaries and preserves its
+  own annotations. Both apps must run for fresh data; saved cards survive restarts.
+- Source artwork: `kit/tools/make_tripcapsule_icon.js`.
+  Tests: `kit/tools/test_tripcapsule.js` (four checks), plus the journey transport
+  and demo boundary in `test_ixdrive.js`.
+- Full `npm test` passed. All three apps built in preview mode; cards, favourites
+  and imperial units were rendered and checked. No G08 vehicle validation,
+  SDK build, installation or remote push has been performed.

@@ -68,7 +68,14 @@ class FakeReader extends RealReader {
         return values[key] === undefined ? null : values[key];
     }
 }
+const tripFiles = new Map();
+const tripPath = p => typeof p === 'string' && p.startsWith('/tmp/mgu-ixdrive-trips.json');
 const stubs = {
+    fs: Object.assign({}, fs, {
+        writeFileSync(p, data, ...args) { if (tripPath(p)) tripFiles.set(p, String(data)); else fs.writeFileSync(p, data, ...args); },
+        chmodSync(p, ...args) { if (!tripPath(p)) fs.chmodSync(p, ...args); },
+        renameSync(a, b) { if (tripPath(a)) { tripFiles.set(b, tripFiles.get(a)); tripFiles.delete(a); } else fs.renameSync(a, b); },
+    }),
     './kit/mgu': { run(a) { app = a; } },
     './kit/diag': { Diag: FakeDiag, hex: require(path.join(KIT, 'diag')).hex },
     './kit/dids': { DidReader: FakeReader },
@@ -428,6 +435,21 @@ const checks = [
             const h=state(dir).insights;
             assert(!h.journeys.length && !h.charges.length && !h.capacities.length && !h.days.length);
         }
+    }],
+    ['Trip Capsule transport exports real history and explicitly rejects demo', async () => {
+        const dir = tmp('trip-transport'), j = { start: now - 60000, end: now, km: 1,
+            kwh: .2, regen: .05, seconds: 60, ambientSum: 10000, ambientN: 1000, era: 0 };
+        fs.writeFileSync(path.join(dir, 'battery.json'), JSON.stringify({ insights: { journeys: [j] } }));
+        const b = await boot(dir, {});
+        const packet = () => JSON.parse(tripFiles.get('/tmp/mgu-ixdrive-trips.json'));
+        assert.strictEqual(packet().demo, false); assert.strictEqual(packet().journeys.length, 1);
+        const { Capsules } = require('../../apps/tripcapsule/model');
+        const cards = new Capsules(); assert(cards.ingest(packet(), now));
+        assert.strictEqual(cards.list()[0].km, 1);
+        b.set('demo', 'on'); assert.strictEqual(packet().demo, true);
+        assert(!packet().journeys); assert(!cards.ingest(packet(), now));
+        b.set('demo', 'off'); assert(cards.ingest(packet(), now));
+        assert.strictEqual(cards.list().length, 1); b.exit();
     }],
     ['every page renders with missing telemetry and demo data', async () => {
         for(const demo of ['off','on']) {

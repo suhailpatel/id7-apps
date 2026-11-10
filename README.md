@@ -25,6 +25,12 @@ shown as unavailable. See [iXDrive's README](apps/ixdrive/README.md) for details
 Four-wheel pressure and temperature, car pressure targets, cool-reading history
 and pressure trends. [App guide](apps/tyrewatch/README.md).
 
+## Trip Capsule
+
+Saved journey cards from iXDrive, with distance, energy, duration, outside
+temperature, labels and favourites. Runs as its own app.
+[App guide](apps/tripcapsule/README.md).
+
 ## Development
 
 Requires Node.js 22+ and Python 3.10+. Builds are English-only.

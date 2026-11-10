@@ -497,6 +497,20 @@ mgu.run({
          * SHARED, a file anyone may read (an app cannot read another's data folder): { t, kw (+ the battery gives power,
          * - it takes it; null while not read), soc, rangeKm (the range at this charge, as the Range page has it) }.
          * Nothing while the demo runs. */
+        // Trip Capsule reads this public summary; each app keeps its own private storage.
+        const TRIPS = '/tmp/mgu-ixdrive-trips.json';
+        const publishTrips = () => {
+            try {
+                const out = usingDemo() ? { version: 1, t: Date.now(), source: 'ixdrive', demo: true }
+                    : { version: 1, t: Date.now(), source: 'ixdrive', demo: false,
+                        journeys: insights.view().journeys.slice(-200), journey: insights.view().journey || null };
+                fs.writeFileSync(TRIPS + '.tmp', JSON.stringify(out), { mode: 0o644 });
+                fs.chmodSync(TRIPS + '.tmp', 0o644);
+                fs.renameSync(TRIPS + '.tmp', TRIPS);
+            } catch (e) { /* The next publication retries. */ }
+        };
+        setInterval(publishTrips, 5000);
+        publishTrips();
         const SHARED = '/tmp/mgu-ixdrive.json';
         setInterval(() => {
             try {
@@ -1035,7 +1049,7 @@ mgu.run({
         settings.onChange((k) => {
             if (k === 'demo') {
                 capacityLearner.anchor = null; capacityLearner.candidate = null;
-                seg.valid = false; insights.breakContinuity();
+                seg.valid = false; insights.breakContinuity(); publishTrips();
             }
             if (k === 'poll') schedule();
             if (k === 'diagPage') actionLabel();
