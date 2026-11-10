@@ -1,29 +1,29 @@
 # id7-apps
 
-Suhail's BMW **iDrive 7** app workspace, with a reusable MGU toolkit and **iXDrive**
-for the G08 iX3. Builds are English-only. This repository is self-contained and
-does not depend on the original `idrive7-apps` working folder.
+Custom apps for BMW iDrive 7, starting with **iXDrive** for the G08 iX3.
+
+Built on [cauliflowermossgrape/idrive7-apps](https://github.com/cauliflowermossgrape/idrive7-apps/).
+Credit to cauliflowermossgrape and the project's contributors for the app toolkit,
+shared runtime and build tools. iXDrive is adapted from their eDrive app.
 
 ## iXDrive
 
-A read-only electric-vehicle dashboard focused on the BMW G08 iX3 with iDrive 7:
+A read-only EV dashboard with:
 
 - Range, charge level, live power and regeneration.
-- Automatic usable-capacity learning and adaptive power gauges.
-- Recent and trip efficiency, recorded distance and energy use.
-- Battery temperatures, cell readings and capacity trends.
-- Charging estimates, charge history and session comparison charts.
-- Journey journal with weekly consumption and estimated-cost comparisons.
-- Home-screen widget and optional diagnostic pages.
+- Learned battery capacity, trip efficiency and energy use.
+- Battery temperatures, cell readings and capacity history.
+- Charging estimates, session history and comparisons.
+- Journey logs, weekly consumption and estimated costs.
+- A home-screen widget and diagnostic pages.
 
-The app is currently at version **0.1.0**. Software checks and offline previews
-pass; its inherited diagnostic readings still need validation on the actual iX3.
-Unsupported readings remain unavailable. See [the app documentation](apps/ixdrive/README.md).
+Vehicle readings still need validation on the G08 iX3. Missing readings are
+shown as unavailable. See [iXDrive's README](apps/ixdrive/README.md) for details.
 
-## Start here
+## Development
 
-Use Node.js 22+ and Python 3.10+ (`python3` on your PATH). No npm packages or Python
-packages are needed for the standard app tests and software previews.
+Requires Node.js 22+ and Python 3.10+. Builds are English-only.
+No extra packages are needed for tests or offline previews.
 
 ```sh
 npm test
@@ -31,17 +31,16 @@ npm run build:preview -- ixdrive
 npm run preview -- dist/ixdrive /tmp/ixdrive-preview
 ```
 
-The preview command writes PNGs and enables demo data unless overridden with
-`--set demo=off`. The build step itself does not enable demo in the app.
+The preview writes PNGs using demo data. Pass `--set demo=off` to disable it.
+For the browser emulator:
 
 ```sh
 npm run emulator -- ixdrive
 ```
 
-The emulator starts a local development server; see its printed address and
-[emulator guide](docs/emulator.md).
+See the [emulator guide](docs/emulator.md) for controls and options.
 
-## Create another app
+### Create an app
 
 ```sh
 npm run new:app -- my_app "My App"
@@ -49,44 +48,31 @@ npm run build:preview -- my_app
 npm run preview -- dist/my_app /tmp/my-app-preview
 ```
 
-The generator creates `apps/my_app/` with an independent ID, unique logging tag,
-settings and a simple canvas screen. It refuses to overwrite an existing app.
-Read [the development guide](docs/DEVELOPMENT.md) before adding vehicle signals.
+The generator creates `apps/my_app/` with its own IDs, settings and a canvas
+screen. See the [development guide](docs/DEVELOPMENT.md) for adding vehicle signals.
 
-## Installable builds
+### Build for the car
 
-Place your own extracted BMW SDK at `oap-sdk/`, then:
+Extract your own BMW SDK into `oap-sdk/`, then run:
 
 ```sh
 npm run build -- ixdrive
 ```
 
-Outputs are `dist/ixdrive@0.1.0.mgu` and `dist/ixdrive@0.1.0.tgz`.
-**The SDK is not included.** Offline preview builds are not installable packages.
-SDK files, vehicle captures, credentials and packaged outputs stay out of Git.
-Deployment helpers are provided under `deploy/`; building does not install an
-app or contact a vehicle.
+Packages are written to `dist/`. The SDK is not included, and preview builds
+cannot be installed on a car. Deployment helpers are in `deploy/`.
 
-## Files kept out of Git
+The [`.gitignore`](.gitignore) excludes the SDK, packages, credentials, vehicle
+captures and other local files. Packages contain BMW's SDK; do not publish them.
 
-The root [`.gitignore`](.gitignore) excludes the BMW SDK, build packages, local
-SOME/IP references, credentials, dependency folders, generated renderer files,
-vehicle captures, logs and backups. It also includes the supplied rules for
-optional app datasets and downloaded assets used by future apps.
+## Repository
 
-Keep application source, icons, tests and documentation in Git. Demo mode is for
-previewing the interface; synthetic readings must not be saved as real history.
+- `apps/` — apps and their documentation.
+- `kit/` — runtime, renderer, build tools and tests.
+- `templates/basic/` — starter app.
+- [Project context](docs/CONTEXT.md) — decisions and outstanding work.
+- [Provenance](docs/PROVENANCE.md) — toolkit origin and licensing details.
 
-## Layout
-
-- `apps/ixdrive/` — EV dashboard and its own documentation.
-- `kit/runtime/`, `kit/platform/` — shared app runtime.
-- `kit/tools/` — build, preview, emulator, scaffolding and tests.
-- `kit/renderd/` — renderer/controller support, source, prebuilt artifacts and licences.
-- `templates/basic/` — source template used by `npm run new:app`.
-- `docs/CONTEXT.md` — project handoff, decisions and next steps.
-- `docs/PROVENANCE.md` — original toolkit revision and licensing.
-
-See [iXDrive's README](apps/ixdrive/README.md) for features and outstanding vehicle
-validation. Shared toolkit code retains its original licences; see `LICENSE`,
-`NOTICE.zh-CN.md`, and the separate renderer/font notices.
+Original licences and notices are retained: [MIT licence](LICENSE),
+[translation notice](NOTICE.zh-CN.md), and separate renderer and font licences
+under `kit/`.
