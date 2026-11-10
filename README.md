@@ -1,6 +1,6 @@
 # id7-apps
 
-Custom apps for BMW iDrive 7, starting with **iXDrive** for the G08 iX3.
+Custom apps for BMW iDrive 7, focused on the G08 iX3.
 
 Built on [cauliflowermossgrape/idrive7-apps](https://github.com/cauliflowermossgrape/idrive7-apps/).
 Credit to cauliflowermossgrape and the project's contributors for the app toolkit,
@@ -19,6 +19,11 @@ A read-only EV dashboard with:
 
 Vehicle readings still need validation on the G08 iX3. Missing readings are
 shown as unavailable. See [iXDrive's README](apps/ixdrive/README.md) for details.
+
+## TyreWatch
+
+Four-wheel pressure and temperature, car pressure targets, cool-reading history
+and pressure trends. [App guide](apps/tyrewatch/README.md).
 
 ## Development
 

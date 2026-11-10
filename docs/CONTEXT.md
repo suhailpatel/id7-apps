@@ -71,7 +71,7 @@ The target calculates an estimate; it does not control the car's charging limit.
 
 ## Verified and unverified
 
-Software has 22 app integration/render checks and 8 history checks, plus shared
+Software has 22 iXDrive integration/render checks, 8 history checks and 5 TyreWatch checks, plus shared
 runtime/DID tests. Earlier previews were checked for English layouts, missing
 readings, kilometres/miles and Celsius/Fahrenheit. New repo checks are recorded
 in the migration commit(s); run `npm test` and rebuild after changing source.
@@ -99,10 +99,10 @@ been performed. No supported signal profile for newer iDrive platforms is promis
 
 ## Ideas discussed, not requested for implementation
 
-Tyre Watch, Smooth Drive, Road Trip/navigation, Cabin Energy, configurable
+Smooth Drive, Road Trip/navigation, Cabin Energy, configurable
 Dashboard, Energy Weather, What If scenarios, Drive Fingerprint, Charge Garden,
 Valet Snapshot, Journey Postcards, Cabin Scenes, Personal Bests and Car Time Capsule.
-Only Journey Journal, Charging Lab and Battery Trends were integrated. Do not
+Journey Journal, Charging Lab and Battery Trends were integrated into iXDrive. Do not
 interpret brainstorming as authorization to implement all of these ideas.
 
 ## Continuing work
@@ -112,3 +112,17 @@ this handoff and `apps/ixdrive/README.md`. The original chat stays in Codex; thi
 file carries the substantive decisions and technical context into the repo.
 For another app, run `npm run new:app -- app_id "App Title"` and follow
 `docs/DEVELOPMENT.md`. No dependency on the old working tree is intended.
+
+## TyreWatch — 10 November 2026
+
+- `apps/tyrewatch`: four-wheel TPMS display, vehicle targets, independent display
+  units, bounded cool-reading history and conservative temperature-matched trends.
+  Explicit vehicle units are required; stale readings clear after 30 seconds.
+  Read-only TPMS getters pause after 3 minutes without movement and 10 minutes
+  without interaction. Cold-start candidates need observed movement history,
+  three hours of rest and fresh temperature/speed; they cannot prove parking while
+  the app was stopped. Field mapping comes from upstream car_vitals, not G08 testing.
+- Source artwork: `kit/tools/make_tyrewatch_icon.js`.
+  Tests: `kit/tools/test_tyrewatch.js` (five checks).
+- Demo and empty-history previews were checked. No G08 vehicle validation or
+  installation has been performed.
