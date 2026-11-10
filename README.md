@@ -1,7 +1,24 @@
 # id7-apps
 
 Suhail's BMW **iDrive 7** app workspace, with a reusable MGU toolkit and **iXDrive**
-for the G08 iX3. English-only builds; no translation maintenance. This repository builds independently of `idrive7-apps`.
+for the G08 iX3. Builds are English-only. This repository is self-contained and
+does not depend on the original `idrive7-apps` working folder.
+
+## iXDrive
+
+A read-only electric-vehicle dashboard focused on the BMW G08 iX3 with iDrive 7:
+
+- Range, charge level, live power and regeneration.
+- Automatic usable-capacity learning and adaptive power gauges.
+- Recent and trip efficiency, recorded distance and energy use.
+- Battery temperatures, cell readings and capacity trends.
+- Charging estimates, charge history and session comparison charts.
+- Journey journal with weekly consumption and estimated-cost comparisons.
+- Home-screen widget and optional diagnostic pages.
+
+The app is currently at version **0.1.0**. Software checks and offline previews
+pass; its inherited diagnostic readings still need validation on the actual iX3.
+Unsupported readings remain unavailable. See [the app documentation](apps/ixdrive/README.md).
 
 ## Start here
 
@@ -49,6 +66,16 @@ Outputs are `dist/ixdrive@0.1.0.mgu` and `dist/ixdrive@0.1.0.tgz`.
 SDK files, vehicle captures, credentials and packaged outputs stay out of Git.
 Deployment helpers are provided under `deploy/`; building does not install an
 app or contact a vehicle.
+
+## Files kept out of Git
+
+The root [`.gitignore`](.gitignore) excludes the BMW SDK, build packages, local
+SOME/IP references, credentials, dependency folders, generated renderer files,
+vehicle captures, logs and backups. It also includes the supplied rules for
+optional app datasets and downloaded assets used by future apps.
+
+Keep application source, icons, tests and documentation in Git. Demo mode is for
+previewing the interface; synthetic readings must not be saved as real history.
 
 ## Layout
 
