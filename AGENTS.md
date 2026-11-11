@@ -21,3 +21,29 @@ new home for iXDrive; do not edit the previous idrive7-apps copy as its source.
 - Keep oap-sdk, dist, credentials and vehicle captures out of commits. Preserve
   original licences. Building does not imply permission to install on a car.
 - Update docs/CONTEXT.md when scope, validated capabilities or blockers change.
+
+
+## App versions before committing and pushing
+
+- Whenever a change affects an app's shipped code, UI, assets, configuration,
+  dependencies or packaging, bump its `version` in `apps/<id>/app.json` as part
+  of the same change. Default to a patch bump (for example, `0.1.1` to `0.1.2`)
+  unless the user requests a different version. Do not reuse a published version.
+- Bump once per logical change being delivered, not once per edit or test run.
+  Include the bump in the change's commit and verify it before pushing. If a
+  change was already committed without a bump, add a follow-up commit before
+  pushing; do not rewrite history just to add the version.
+- Shared runtime or build changes require bumps for every app whose shipped
+  package is affected. Bump a dependent app too when its shipped dependency
+  metadata changes. In particular, the Store generator tracks iXDrive's current
+  version in Trip Capsule's minimum requirement.
+- Run `npm run store:prepare` after updating source versions. Commit the generated
+  `store/apps/` manifests/icons and `mgu-repo.json` changes alongside the source.
+  Do not edit generated versions by hand. Keep project context current where it
+  records app versions.
+- Before pushing, run `npm run store:check`, the relevant tests, and
+  `npm run build:store`. Confirm package names, catalog versions and dependency
+  requirements agree. Keep generated packages and the SDK out of Git.
+- Documentation-only, test-only and agent-instruction changes do not require an
+  app version bump unless they alter the shipped package or Store metadata.
+  This rule does not itself authorize pushing or publishing.
