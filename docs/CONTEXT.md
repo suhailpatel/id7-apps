@@ -466,3 +466,27 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
   font licences/assets. Both typefaces, missing data and three-digit cluster/HUD
   views were rendered and inspected. Live G08 validation remains outstanding.
   No car installation, commit, push or publication was performed.
+
+### iX Pulse additional cluster readouts — 11 November 2026
+
+- Revisited bimmer-lab's configurable readout slots, Cruise/Sport layouts and
+  visibility notes; latest upstream revision remains
+  `e212b4cb8dc09eec9d2ad5e806e949ec0a0a12da`. Version `0.1.7` adds **Wide cluster
+  detail**: Battery (cell-average temperature / pack voltage), Observed trip
+  (distance / signed net battery energy), or Off. Battery is the default.
+- Taycan and Horizon gain a compact detail row and outlined gear, retaining
+  their existing dimensions and positions. All prior essentials remain visible.
+  Compact/HUD keep their existing readouts. Upstream's measured X3 M40i
+  visibility masks were not assumed to be validated for the G08.
+- Reuses existing readings and integration: no extra vehicle signals, requests
+  or persistence. Temperature/voltage retain their existing freshness rules;
+  observed totals require at least one valid paired interval, include stationary
+  draw and moving regen, and exclude charging, invalid data and long gaps.
+  Observed net energy can be negative. Reset observed trip clears totals and
+  average together; demo transitions also clear them. `AVG OBS*`, `DIST OBS*`
+  and `NET OBS*` flag excluded gaps, including gaps after stationary draw.
+- All 20 iX Pulse checks, full `npm test`, Store checks and all six package builds
+  passed. Battery, observed totals, missing-data, km/h/Fahrenheit/amber and font
+  variants were visually reviewed. Only iX Pulse and its generated Store version
+  changed to `0.1.7`; other app versions are unchanged. Live iX3 validation is
+  still outstanding. This change has not been committed, pushed or installed.

@@ -64,12 +64,13 @@ function createProjection(ctx,Client=ClusterRender,clock=Date.now) {
             }
             const layer=layers[key];
             if(place!==layer.place){client.set(layer.ref,rect);layer.place=place;}
-            const signature=JSON.stringify([style,ctx.settings.get('typeface'),d.kw===null?null:Math.round(d.kw),d.soc===null?null:Math.round(d.soc),d.kmh,d.gear,d.limit,d.flow,d.rangeKm,d.averageKwh100Km,d.navigation,ctx.settings.get('speedUnit'),ctx.settings.get('palette'),wanted[key]]);
+            const detail=style==='compact'?null:Draw.details(d,ctx.settings.get('speedUnit'),ctx.settings.get('tempUnit'),ctx.settings.get('clusterDetail'));
+            const signature=JSON.stringify([style,detail,d.averagePartial,ctx.settings.get('typeface'),d.kw===null?null:Math.round(d.kw),d.soc===null?null:Math.round(d.soc),d.kmh,d.gear,d.limit,d.flow,d.rangeKm,d.averageKwh100Km,d.navigation,ctx.settings.get('speedUnit'),ctx.settings.get('palette'),wanted[key]]);
             if(layer.key!==signature){
                 // Notifications can arrive much faster than the display rate. Gate drawing
                 // as well as uploads; eligibility/drop checks above always run immediately.
                 if(layer.paintedAt!==undefined&&now>=layer.paintedAt&&now-layer.paintedAt<500)return;
-                const cv=Draw.draw(new Canvas(dim.w,dim.h),d,ctx.settings.get('palette'),wanted[key]==='test',ctx.settings.get('speedUnit'),style,ctx.settings.get('typeface'));
+                const cv=Draw.draw(new Canvas(dim.w,dim.h),d,ctx.settings.get('palette'),wanted[key]==='test',ctx.settings.get('speedUnit'),style,ctx.settings.get('typeface'),detail);
                 const pixels=Buffer.from(cv.d.buffer,cv.d.byteOffset,cv.d.length);
                 // Only changed rows travel across the renderer socket; unchanged frames send nothing.
                 const stride=dim.w*4;

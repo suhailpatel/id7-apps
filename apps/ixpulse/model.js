@@ -3,10 +3,10 @@ const {number}=require('./decode');
 class Pulse {
     constructor() { this.clear(); }
     clear() { this.readings={};this.resetAverage(); }
-    resetAverage(){this.energy=0;this.distance=0;this.previous=null;this.usedPowerAt=this.readings.hvI?this.readings.hvI.t:null;this.partial=false;}
+    resetAverage(){this.energy=0;this.distance=0;this.observedMs=0;this.previous=null;this.usedPowerAt=this.readings.hvI?this.readings.hvI.t:null;this.partial=false;}
     put(key,data,t,source) {
         this.readings[key]={data,t,source};
-        if(!data&&['hvV','hvI','speed'].indexOf(key)>=0){this.previous=null;if(this.distance>0)this.partial=true;}
+        if(!data&&['hvV','hvI','speed'].indexOf(key)>=0){this.previous=null;if(this.observedMs>0)this.partial=true;}
     }
     get(key,now,ttl) {
         const r=this.readings[key];
@@ -56,7 +56,7 @@ class Pulse {
     observe(now){
         const d=this.snapshot(now),power=this.readings.hvI;
         if(!number(d.kw)||!number(d.kmh)||(d.kmh<=1&&d.kw<-.3)){
-            this.previous=null;if(this.distance>0)this.partial=true;return;
+            this.previous=null;if(this.observedMs>0)this.partial=true;return;
         }
         if(!power||power.t===this.usedPowerAt)return;
         this.usedPowerAt=power.t;
@@ -66,7 +66,8 @@ class Pulse {
             if(dt>0&&dt<=10000){
                 this.energy+=(prev.kw+point.kw)/2*dt/3600000;
                 this.distance+=(prev.kmh+point.kmh)/2*dt/3600000;
-            }else if(this.distance>0)this.partial=true;
+                this.observedMs+=dt;
+            }else if(this.observedMs>0)this.partial=true;
         }
         this.previous=point;
     }
@@ -81,6 +82,7 @@ class Pulse {
         return {kw,kmh,flow,gear:gear?(gear.value==='D'&&program?'B':gear.value):null,
             rangeKm:range&&units?range.value*(units.unit==='mi'?1.609344:1):null,
             averageKwh100Km:this.distance>=1?100*this.energy/this.distance:null,observedKm:this.distance,averagePartial:this.partial,
+            observedSeconds:this.observedMs/1000,observedNetKwh:this.observedMs>0?this.energy:null,
             limit:this.get('limit',now,15000),soc:soc&&number(soc.pct)?soc.pct:null,temp:temp&&number(temp.avg)?temp.avg:null,
             volts:v&&number(v.v)?v.v:null,demo:false};
     }
@@ -89,7 +91,7 @@ const {Navigation}=require('./navigation');
 function demo(now) {
     const kw=Math.round(40+70*Math.sin(now/4000));
     return {kw,kmh:88,gear:'D',limit:{value:60,unit:'mph'},flow:kw<-.3?'REGEN':'POWER',soc:64,temp:26.5,volts:389,demo:true,
-        rangeKm:286,averageKwh100Km:18.4,observedKm:24,averagePartial:false,
+        rangeKm:286,averageKwh100Km:18.4,observedKm:24,observedSeconds:1800,observedNetKwh:4.416,averagePartial:false,
         navigation:{turn:{arrow:'left',text:'Turn left',distance:'300 yd',road:'Station Road'},text:'',hudReason:''}};
 }
 // This is a labelled drawing scale, never rated power or a learned vehicle capability.

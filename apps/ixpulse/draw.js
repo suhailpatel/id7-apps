@@ -3,6 +3,22 @@ const {number,scale}=require('./model');
 const Type=require('./typography');
 const fmt=(v,n=0)=>number(v)?v.toFixed(n):'--';
 const WIDTH=400,HEIGHT=200;
+const avgLabel=d=>'AVG OBS'+(d.averagePartial?'*':'');
+function details(d,speedUnit,tempUnit,choice) {
+    if(choice==='off')return null;
+    if(choice==='observed'){
+        const mph=speedUnit!=='kmh',available=number(d.observedSeconds)&&d.observedSeconds>0,star=d.averagePartial?'*':'';
+        return {left:'DIST OBS'+star+'  '+fmt(available&&number(d.observedKm)?d.observedKm/(mph?1.609344:1):null,1)+' '+(mph?'mi':'km'),
+            right:'NET OBS'+star+'  '+fmt(available?d.observedNetKwh:null,2)+' kWh'};
+    }
+    const f=tempUnit==='f';
+    return {left:'BATTERY  '+fmt(number(d.temp)?f?d.temp*1.8+32:d.temp:null,1)+(f?' °F':' °C'),
+        right:'PACK  '+fmt(d.volts)+' V'};
+}
+function detailText(cv,text,x,y,align,c) {
+    const size=Math.min(16,16*210/Math.max(1,cv.textWidth(text,16)));
+    cv.text(text,x,y,size,c,{align});
+}
 function fit(cv,text,width,size){let s=String(text||'');if(cv.textWidth(s,size)<=width)return s;while(s&&cv.textWidth(s+'…',size)>width)s=s.slice(0,-1);return s+'…';}
 function arrow(cv,type,x,y,c){
     const line=(a,b,d,e)=>cv.line(x+a,y+b,x+d,y+e,3,c);
@@ -52,7 +68,7 @@ function compact(cv,d,palette,test,speedUnit,typeface) {
     const avg=number(d.averageKwh100Km)?d.averageKwh100Km*(mph?1.609344:1):null;
     cv.text('RANGE',8,122,10,c.dim,{font:'bold'});
     cv.text(fmt(range)+' '+(mph?'mi':'km'),8,146,24,'#ffffff',{font:'num'});
-    cv.text('AVG OBS · kWh/100 '+(mph?'mi':'km'),392,122,10,c.dim,{align:'right',font:'bold'});
+    cv.text(avgLabel(d)+' · kWh/100 '+(mph?'mi':'km'),392,122,10,c.dim,{align:'right',font:'bold'});
     cv.text(fmt(avg,1),392,146,24,'#ffffff',{align:'right',font:'num'});
     cv.fillRect(8,154,384,1,c.dim);
     const nav=d.navigation||{},turn=nav.turn;
@@ -117,7 +133,7 @@ function taycan(cv,d,c,v) {
     cv.text(v.range,132,159,28,white,{align:'center',font:'num'});
     cv.text('RANGE',132,177,11,c.dim,{align:'center'});
     cv.text(v.avg,132,209,25,white,{align:'center',font:'num'});
-    cv.text('AVG OBS · '+v.avgUnit,132,229,11,c.dim,{align:'center'});
+    cv.text(avgLabel(d)+' · '+v.avgUnit,132,229,11,c.dim,{align:'center'});
     // Zero is at twelve o'clock; negative kW sweeps left, positive right.
     cv.arc(360,145,115,120,228,360,'#303943');
     cv.arc(360,145,115,120,360,492,'#303943');
@@ -131,24 +147,26 @@ function taycan(cv,d,c,v) {
     sign(cv,d,360,53,c);
     Type.speed(cv,v.speed,360,164,68,white,'center',188,v.typeface);
     cv.text(v.unit,360,185,15,c.dim,{align:'center'});
+    cv.strokeRoundRect(339,194,42,34,5,1,c.dim);
     cv.text(d.gear||'--',360,222,29,white,{align:'center',font:'bold'});
     cv.text(fmt(d.kw)+' kW',360,251,23,ink,{align:'center',font:'num'});
     cv.text('IN',267,250,10,c.regen,{align:'center'});cv.text('OUT',453,250,10,c.power,{align:'center'});
     cv.text('SCALE +/-'+cap+' kW',360,287,11,c.dim,{align:'center'});
     navigation(cv,d,c,588,80,170);
-    cv.text(d.flow||'UNAVAILABLE',132,287,12,ink,{align:'center'});
-    cv.text('iX PULSE',588,287,12,c.dim,{align:'center',font:'bold'});
+    cv.text(d.flow||'UNAVAILABLE',360,269,10,ink,{align:'center'});
+    if(v.detail){detailText(cv,v.detail.left,132,287,'center',white);detailText(cv,v.detail.right,588,287,'center',white);}
 }
 function horizon(cv,d,c,v) {
     const white='#ffffff',ink=d.kw<0?c.regen:c.power,cap=scale(d.kw);
-    cv.line(249,52,249,257,1,'#46515d');cv.line(471,52,471,257,1,'#46515d');
+    cv.line(249,52,249,249,1,'#46515d');cv.line(471,52,471,249,1,'#46515d');
     cv.text('BATTERY',30,66,12,c.dim,{font:'bold'});
     cv.text(fmt(d.soc)+'%',30,108,38,white,{font:'num'});
     charge(cv,d.soc,30,120,185,c);
     cv.text(v.range,30,158,33,white,{font:'num'});
     cv.text('REMAINING RANGE',30,180,12,c.dim);
     cv.text(v.avg,30,228,32,white,{font:'num'});
-    cv.text('AVG OBS · '+v.avgUnit,30,251,12,c.dim);
+    cv.text(avgLabel(d)+' · '+v.avgUnit,30,251,12,c.dim);
+    cv.strokeRoundRect(265,47,42,35,5,1,c.dim);
     cv.text(d.gear||'--',286,75,30,white,{align:'center',font:'bold'});
     sign(cv,d,427,43,c);
     Type.speed(cv,v.speed,360,164,76,white,'center',184,v.typeface);
@@ -156,12 +174,13 @@ function horizon(cv,d,c,v) {
     cv.text(fmt(d.kw)+' kW',360,229,28,ink,{align:'center',font:'num'});
     cv.text(d.flow||'UNAVAILABLE',360,251,11,ink,{align:'center'});
     navigation(cv,d,c,590,66,200);
-    cv.fillRect(30,273,660,3,'#46515d');cv.fillRect(359,268,2,13,white);
-    if(number(d.kw))cv.fillRect(d.kw<0?360+330*d.kw/cap:360,271,Math.max(1,330*Math.abs(d.kw)/cap),6,ink);
-    cv.text('IN',30,296,10,c.regen);cv.text('SCALE +/-'+cap+' kW',360,296,10,c.dim,{align:'center'});
-    cv.text('OUT',690,296,10,c.power,{align:'right'});
+    cv.fillRect(30,258,660,3,'#46515d');cv.fillRect(359,253,2,13,white);
+    if(number(d.kw))cv.fillRect(d.kw<0?360+330*d.kw/cap:360,256,Math.max(1,330*Math.abs(d.kw)/cap),6,ink);
+    cv.text('IN',30,276,10,c.regen);cv.text('SCALE +/-'+cap+' kW',360,276,10,c.dim,{align:'center'});
+    cv.text('OUT',690,276,10,c.power,{align:'right'});
+    if(v.detail){detailText(cv,v.detail.left,30,298,'left',white);detailText(cv,v.detail.right,690,298,'right',white);}
 }
-function draw(cv,d,palette,test,speedUnit,style,typeface) {
+function draw(cv,d,palette,test,speedUnit,style,typeface,detail) {
     style=styleName(style);
     if(style==='compact')return compact(cv,d,palette,test,speedUnit,typeface);
     const c=colours(palette);cv.clear();
@@ -173,7 +192,7 @@ function draw(cv,d,palette,test,speedUnit,style,typeface) {
         return cv;
     }
     cv.text(d.demo?'DEMO':'UNVERIFIED',20,15,11,c.dim,{font:'bold'});
-    (style==='taycan'?taycan:horizon)(cv,d,c,Object.assign(values(d,speedUnit),{typeface}));
+    (style==='taycan'?taycan:horizon)(cv,d,c,Object.assign(values(d,speedUnit),{typeface,detail}));
     return cv;
 }
-module.exports={draw,colours,fmt,WIDTH,HEIGHT,dimensions,styleName,STYLES};
+module.exports={draw,colours,fmt,WIDTH,HEIGHT,dimensions,styleName,STYLES,details,avgLabel};

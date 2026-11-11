@@ -2,7 +2,7 @@
   "id": "ixpulse",
   "title": "iX Pulse",
   "description": "EV driving HUD and cluster with speed, range, observed average consumption and navigation directions. G08 validation pending.",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "vendor": "custom",
   "loggingId": "OAXP",
   "iconGlyph": "bolt",
@@ -85,7 +85,7 @@
         ],
         [
           "BTN_RESET_AVG",
-          "Reset average"
+          "Reset observed trip"
         ],
         [
           "BTN_SETTINGS",
@@ -152,6 +152,26 @@
         [
           "horizon",
           "Horizon \u00b7 wide digital"
+        ]
+      ]
+    },
+    {
+      "key": "clusterDetail",
+      "label": "Wide cluster detail",
+      "type": "choice",
+      "default": "battery",
+      "options": [
+        [
+          "battery",
+          "Battery temperature / pack voltage"
+        ],
+        [
+          "observed",
+          "Observed distance / net energy"
+        ],
+        [
+          "off",
+          "Off"
         ]
       ]
     },

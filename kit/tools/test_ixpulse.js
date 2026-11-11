@@ -95,6 +95,29 @@ test('observed average matches energy and distance, includes regen, excludes gap
     sample(T+110000,18,60);m.resetAverage();m.observe(T+110001);assert.strictEqual(m.previous,null,'reset cannot reuse a pre-reset power sample');
     sample(T+115000,18,60);assert.strictEqual(m.distance,0);
 });
+test('observed totals need measured intervals, include standstill draw and never bridge charging or gaps',()=>{
+    const m=new Pulse(),sample=(t,kw,speed)=>{
+        m.speed(speed*64,t);m.put('hvV',{v:400},t);m.put('hvI',{a:kw*2.5},t);m.observe(t);
+    };
+    assert.strictEqual(m.snapshot(T).observedNetKwh,null);
+    sample(T,36,0);assert.strictEqual(m.snapshot(T).observedNetKwh,null);
+    sample(T+5000,36,0);let d=m.snapshot(T+5000);
+    assert.strictEqual(d.observedKm,0);assert.strictEqual(d.observedSeconds,5);assert(Math.abs(d.observedNetKwh-.05)<1e-9);
+    sample(T+10000,36,72);d=m.snapshot(T+10000);
+    assert(Math.abs(d.observedKm-.05)<1e-9);assert(Math.abs(d.observedNetKwh-.1)<1e-9);
+    m.observe(T+10000);assert.strictEqual(m.snapshot(T+10000).observedSeconds,10);
+    sample(T+15000,-36,72);sample(T+20000,-36,72);d=m.snapshot(T+20000);
+    assert(Math.abs(d.observedNetKwh-.05)<1e-9,'regen reduces signed net energy');
+    sample(T+25000,-36,0);sample(T+30000,-36,0);
+    assert.strictEqual(m.snapshot(T+30000).observedSeconds,20,'charging contributes neither time nor energy');
+    sample(T+35000,36,0);assert.strictEqual(m.snapshot(T+35000).observedSeconds,20);
+    sample(T+50000,36,0);assert.strictEqual(m.snapshot(T+50000).observedSeconds,20,'long gaps are excluded');
+    assert(m.snapshot(T+50000).averagePartial);
+    m.resetAverage();d=m.snapshot(T+50000);assert.strictEqual(d.observedSeconds,0);assert.strictEqual(d.observedNetKwh,null);assert(!d.averagePartial);
+    sample(T+55000,36,0);sample(T+60000,36,0);m.put('hvV',null,T+61000);
+    assert(m.snapshot(T+61000).averagePartial,'a gap also marks an observed stationary interval');
+    m.clear();assert.strictEqual(m.snapshot(T+62000).observedNetKwh,null,'demo reset removes observed totals');
+});
 const turn={intersection:{direction:'LEFT',formattedDistance:{distance:'300',unit:'YARD'},description:{elements:[{text:'Station Road'}]}}};
 const events=items=>({GuidanceEventListError:'NO_ERROR',viewContent:[{eventsInView:items}]});
 function route(n,phone,now){n.put('state',phone?0:2,now);n.put('provider',phone?'CAR_PLAY':'NONE',now);n.put('carplay',phone,now);n.put('android',false,now);}
@@ -148,11 +171,33 @@ class FakeClient extends EventEmitter {
     connect(){} close(){this.closed=true;} image(o){const ref=this.next++;this.layers.set(ref,o);return ref;}
     drop(ref){this.layers.delete(ref);} set(ref,o){Object.assign(this.layers.get(ref),o);} pixels(ref,rects,b){this.frames.push({ref,rects,bytes:b.length});return true;}
 }
+test('cluster detail values respect units and expiry, and refresh only the affected output',()=>{
+    const m=new Pulse();m.put('cellT',{avg:26.5},T);m.put('hvV',{v:389},T);
+    assert.deepStrictEqual(Draw.details(m.snapshot(T),'mph','c','battery'),{left:'BATTERY  26.5 °C',right:'PACK  389 V'});
+    assert.strictEqual(Draw.details(m.snapshot(T),'mph','f','battery').left,'BATTERY  79.7 °F');
+    assert.strictEqual(Draw.details(m.snapshot(T+12001),'mph','c','battery').right,'PACK  -- V');
+    assert.strictEqual(Draw.details(m.snapshot(T+30001),'mph','c','battery').left,'BATTERY  -- °C');
+    assert.strictEqual(Draw.details(m.snapshot(T),'mph','c','observed').left,'DIST OBS  -- mi');
+    assert.strictEqual(Draw.details(m.snapshot(T),'mph','c','off'),null);
+    const opts={hud:'on',cluster:'on',clusterStyle:'taycan',clusterDetail:'battery',tempUnit:'c'},p=createProjection({spec,settings:{get:k=>opts[k]}},FakeClient);
+    const d=Object.assign(m.snapshot(T),{kmh:88});p.update(d,true,'');const c=FakeClient.last,panel=Array.from(c.layers.keys())[1];
+    d.temp=27;env.now+=500;p.update(d,true,'');assert.strictEqual(c.frames.length,3);assert.strictEqual(c.frames[2].ref,panel);
+    opts.tempUnit='f';env.now+=500;p.update(d,true,'');assert.strictEqual(c.frames.length,4);
+    opts.clusterDetail='observed';Object.assign(d,{observedSeconds:60,observedKm:1.609344,observedNetKwh:-.15});
+    assert.deepStrictEqual(Draw.details(d,'mph','c','observed'),{left:'DIST OBS  1.0 mi',right:'NET OBS  -0.15 kWh'});
+    env.now+=500;p.update(d,true,'');assert.strictEqual(c.frames.length,5);
+    d.temp=28;env.now+=500;p.update(d,true,'');assert.strictEqual(c.frames.length,5,'hidden battery values do not redraw');
+    d.averagePartial=true;env.now+=500;p.update(d,true,'');assert.strictEqual(c.frames.length,7,'gap marker redraws HUD and cluster');
+    assert.strictEqual(Draw.avgLabel(d),'AVG OBS*');assert(Draw.details(d,'mph','c','observed').left.startsWith('DIST OBS*'));
+    opts.clusterDetail='off';env.now+=500;p.update(d,true,'');const count=c.frames.length;
+    d.observedNetKwh=.3;env.now+=500;p.update(d,true,'');assert.strictEqual(c.frames.length,count);p.close();
+});
 test('independent image targets, navigation handoff, demo isolation, guard and reconnect cleanup',()=>{
+    const previousClient=FakeClient.last;
     const opts={};spec.settings.forEach(s=>opts[s.key]=s.default);
     const ctx={spec,settings:{get:k=>opts[k]}};const p=createProjection(ctx,FakeClient);
     const d={kw:28,soc:64,flow:'POWER',kmh:60,demo:false};
-    p.update(d,true,'');assert(!FakeClient.last);
+    p.update(d,true,'');assert.strictEqual(FakeClient.last,previousClient,'disabled outputs do not create a client');
     opts.hud='on';opts.cluster='on';p.update(d,true,'');let c=FakeClient.last;
     assert.strictEqual(c.id,'ixpulse');assert.strictEqual(c.layers.size,2);
     assert.deepStrictEqual(Array.from(c.layers.values()).map(l=>l.target),['hud','panel']);

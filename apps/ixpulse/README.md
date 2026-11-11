@@ -28,6 +28,10 @@ Independent app ID and settings; no iXDrive dependency, saved telemetry or learn
   condensed digits, across the centre-screen speed, HUD and cluster. Speed fits
   its reserved space even at three digits; units, gear and road signs stay separate.
   Both wide layouts also show a thin segmented strip for the reported battery level.
+- **Wide cluster detail:** Battery temperature / pack voltage (default), observed
+  distance / net energy, or Off. Taycan and Horizon keep their existing image size
+  and placement, with a compact detail row and an outlined current gear. The HUD
+  and Compact layout retain their existing readouts.
 - **HUD / Cluster (experimental):** independent Off, On and parked alignment
   pattern settings, plus size and horizontal/vertical placement for each output.
   Both default off. The cluster uses a transparent `panel` overlay, not a
@@ -99,8 +103,17 @@ from the battery power and distance this app observes. It appears after at least
 negative power while stationary is excluded as possible charging. Invalid inputs,
 stale speed/power and gaps over 10 seconds break integration, without filling the
 gap. It is not BMW's trip-computer average or necessarily an entire journey.
-It resets on app restart, demo transitions or **Reset average**. Nothing is saved
+An asterisk (`AVG OBS*`) marks excluded gaps in readings on both projections.
+It resets on app restart, demo transitions or **Reset observed trip**. Nothing is saved
 or learned. Battery decoding limitations also apply to this calculated figure.
+
+**DIST OBS / NET OBS** use those same matched intervals: observed distance and
+signed net battery energy, with regeneration subtracted. They stay `--` until a
+valid interval is measured. They are partial observations, not the car's odometer
+or a complete trip record, and reset together with the average. An asterisk marks
+excluded gaps. No additional polling or saved history is used. The Battery detail
+row uses the existing cell-average temperature (30-second expiry) and pack voltage
+(12-second expiry); these diagnostic candidates still need G08 validation.
 
 Speed uses the existing Vehicle2 signal and may differ from BMW's indicated
 speed. The limit comes from `TrafficSignDisplayControl` notifications, with its

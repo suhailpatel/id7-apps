@@ -58,7 +58,8 @@ mgu.run({async start(ctx) {
             strokeRoundRect:(a,b,w,h,r,l,c)=>cv.strokeRoundRect(x+a*k,y+b*k,w*k,h*k,r*k,l*k,c),
             arc:(a,b,r0,r1,a0,a1,c,o)=>cv.arc(x+a*k,y+b*k,r0*k,r1*k,a0,a1,c,o),
             textWidth:(s,size,o)=>cv.textWidth(s,size*k,o)/k};
-        Draw.draw(scaled,d,ctx.settings.get('palette'),test,ctx.settings.get('speedUnit'),style,ctx.settings.get('typeface'));
+        const detail=Draw.details(d,ctx.settings.get('speedUnit'),ctx.settings.get('tempUnit'),ctx.settings.get('clusterDetail'));
+        Draw.draw(scaled,d,ctx.settings.get('palette'),test,ctx.settings.get('speedUnit'),style,ctx.settings.get('typeface'),detail);
     }
     function render() {
         const d=current(),t=ctx.theme(),cv=ctx.canvas(1600,520).clear(t.bg),c=Draw.colours(ctx.settings.get('palette'));
@@ -80,7 +81,7 @@ mgu.run({async start(ctx) {
             cv.text('INTO BATTERY',56,414,22,c.regen,{font:'bold'});cv.text('POWER OUT',1044,414,22,c.power,{align:'right',font:'bold'});
             const miles=ctx.settings.get('speedUnit')==='mph',distanceUnit=miles?'mi':'km';
             cv.text('RANGE  '+Draw.fmt(number(d.rangeKm)?d.rangeKm/(miles?1.609344:1):null)+' '+distanceUnit,56,466,26,t.text);
-            cv.text('AVG OBS  '+Draw.fmt(number(d.averageKwh100Km)?d.averageKwh100Km*(miles?1.609344:1):null,1)+' kWh/100 '+distanceUnit,1044,466,24,t.text,{align:'right'});
+            cv.text(Draw.avgLabel(d)+'  '+Draw.fmt(number(d.averageKwh100Km)?d.averageKwh100Km*(miles?1.609344:1):null,1)+' kWh/100 '+distanceUnit,1044,466,24,t.text,{align:'right'});
             cv.text('Scale +/-'+cap+' kW',552,413,16,t.dim,{align:'center'});
             const mph=ctx.settings.get('speedUnit')==='mph';
             cv.text('SPEED',1136,127,20,t.dim,{font:'bold'});
@@ -100,14 +101,14 @@ mgu.run({async start(ctx) {
             preview(cv,d,wide?832:922,106,wide?1:1.35,ctx.settings.get('cluster')==='test',style);
             cv.text(projection.status('hud'),56,440,24,t.text);cv.text(projection.status('cluster'),840,440,24,t.text);
             cv.text('BMW guidance takes over if directions are unavailable',56,485,20,t.dim);
-            cv.text('AVG OBS: recorded driving since app start or reset',840,485,20,t.dim);
+            cv.text(d.averagePartial?'OBS*: gaps excluded · since app start or reset':'AVG OBS: recorded driving since app start or reset',840,485,20,t.dim);
         }else{
             G.panel(cv,t,24,44,760,468,'Taycan · three instruments');G.panel(cv,t,808,44,768,468,'Horizon · wide digital');
             preview(cv,d,44,110,1,false,'taycan');preview(cv,d,832,110,1,false,'horizon');
             cv.text('Energy · speed / power · navigation',56,446,22,t.text);
             cv.text('Large digits · open layout · power strip',840,446,22,t.text);
             cv.text('Choose layout and speed typeface in Settings',56,482,20,t.dim);
-            cv.text('HUD keeps its compact layout',840,482,20,t.dim);
+            cv.text(d.averagePartial?'OBS*: gaps in readings excluded':'Cluster detail: Battery / Observed trip / Off',840,482,20,t.dim);
         }
         return ctx.ui.image('MAIN_GFX',cv);
     }
