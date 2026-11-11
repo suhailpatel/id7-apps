@@ -1,0 +1,18 @@
+{
+  "id": "suhailpatel_ixobservatory",
+  "sourceApp": "ixobservatory",
+  "version": "0.1.1",
+  "title": "iX Observatory",
+  "description": "Battery and thermal overview, temperature charts and cell voltages. G08 telemetry awaits vehicle validation.",
+  "vendor": "suhailpatel",
+  "author": "suhailpatel",
+  "loggingId": "SIXO",
+  "mguHmi": [
+    "ID7"
+  ],
+  "requires": {
+    "mgu-render": "0.6.19",
+    "mgu-deploy": "0.6.9"
+  },
+  "config": {}
+}

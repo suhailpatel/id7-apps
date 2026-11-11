@@ -317,8 +317,8 @@ def manifest_for(spec):
     return {'proxies': proxies, 'services': PLATFORM_SERVICES}
 
 
-def make_icon(spec, out):
-    src = os.path.join(APPS, spec['id'], 'icon.png')
+def make_icon(spec, out, source_dir=None):
+    src = os.path.join(source_dir or os.path.join(APPS, spec['id']), 'icon.png')
     if os.path.exists(src):
         shutil.copy(src, out)
         return
@@ -398,24 +398,33 @@ def build_start_widget(spec, app_id, icon_src, out, pkg_out=None):
     return {'component': comp, 'layout': ui['containers']['500']['components'][str(WIDGET_COMPONENT_ID)]['cells']['Widget']['value']}
 
 
-def build(app_id, language='en', preview_only=False):
+def build(app_id, language='en', preview_only=False, publication=None):
     language = normalize_language(language)
-    if not preview_only and not all(os.path.isfile(os.path.join(SDK, name)) for name in ('index.js', 'package.json')):
+    if not preview_only and publication is None and not all(os.path.isfile(os.path.join(SDK, name)) for name in ('index.js', 'package.json')):
         raise SystemExit('BMW oap-sdk is missing. Extract it from your own head unit with kit/tools/extract_sdk.js, '
                          'or use --preview-only for an offline preview (no installable package).')
     adir = os.path.join(APPS, app_id)
     spec = json.load(open(os.path.join(adir, 'app.json'), encoding='utf-8'))
     spec = localize_spec(spec, language)
     spec.setdefault('id', app_id)
+    if publication is not None:
+        # Store editions have independent IDs/storage. Never extract or copy an SDK here.
+        if preview_only:
+            raise ValueError('A store build must include the complete RHMI resources')
+        for key in ('id', 'title', 'description', 'vendor', 'loggingId'):
+            if key in publication:
+                spec[key] = publication[key]
+        spec.setdefault('config', {}).update(publication.get('config', {}))
     ver = spec['version']
-    stage = os.path.join(DIST, app_id)
+    stage = os.path.join(DIST, 'store-build', spec['id']) if publication is not None else os.path.join(DIST, app_id)
     # The source folder may use display casing; keep the installed identity stable.
     app_id = spec['id']
     shutil.rmtree(stage, ignore_errors=True)
     src = os.path.join(stage, 'source')
     os.makedirs(os.path.join(src, 'javascript', 'kit'))
     os.makedirs(os.path.join(src, 'config'))
-    os.makedirs(os.path.join(src, 'node_modules', 'oap-sdk'))
+    if publication is None:
+        os.makedirs(os.path.join(src, 'node_modules', 'oap-sdk'))
 
     manifest = manifest_for(json.loads(json.dumps(spec)))
     xml, uidesc, strings, state_ids = build_ui(spec, language)
@@ -435,6 +444,14 @@ def build(app_id, language='en', preview_only=False):
             'userLoginRequired': False, 'backgroundPriority': 200, 'someipManifest': 'manifest.json',
         },
     }
+    if publication is not None:
+        pkg.update({'license': 'MIT', 'mguHmi': ['ID7'], 'mguInternet': False,
+                    'requires': publication['requires']})
+        for name in ('LICENSE', 'NOTICE.zh-CN.md'):
+            shutil.copy(os.path.join(ROOT, name), os.path.join(src, name))
+        shutil.copy(os.path.join(ROOT, 'docs', 'PROVENANCE.md'), os.path.join(src, 'PROVENANCE.md'))
+        shutil.copy(os.path.join(adir, 'README.md'), os.path.join(src, 'README.md'))
+        shutil.copy(os.path.join(adir, 'icon.png'), os.path.join(src, 'icon.png'))
     json.dump(pkg, open(os.path.join(src, 'package.json'), 'w', encoding='utf-8', newline='\n'), indent=2)
     json.dump(manifest, open(os.path.join(src, 'manifest.json'), 'w', encoding='utf-8', newline='\n'), indent=2)
     shutil.copy(os.path.join(KIT, 'platform', 'permissions.json'), os.path.join(src, 'permissions.json'))
@@ -515,8 +532,9 @@ def build(app_id, language='en', preview_only=False):
     if preview_only:
         print('%s %s: offline preview in %s (NO SDK, NOT INSTALLABLE)' % (app_id, ver, stage))
         return
-    shutil.copy(os.path.join(SDK, 'index.js'), os.path.join(src, 'node_modules', 'oap-sdk', 'index.js'))
-    shutil.copy(os.path.join(SDK, 'package.json'), os.path.join(src, 'node_modules', 'oap-sdk', 'package.json'))
+    if publication is None:
+        shutil.copy(os.path.join(SDK, 'index.js'), os.path.join(src, 'node_modules', 'oap-sdk', 'index.js'))
+        shutil.copy(os.path.join(SDK, 'package.json'), os.path.join(src, 'node_modules', 'oap-sdk', 'package.json'))
 
     # --- rhmiData: package format (inside source/) and installed format ---
     icon = spec['id'] + '_icon.png'
@@ -548,7 +566,7 @@ def build(app_id, language='en', preview_only=False):
     json.dump(uidesc, open(os.path.join(pr, 'uiDescriptions', 'ID7', 'uiDescription.json'), 'w', encoding='utf-8', newline='\n'), indent=1)
     for lang in LANGS:
         json.dump(strings, open(os.path.join(pr, 'variantGroups', 'Common', 'texts', lang + '.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False)
-    make_icon(spec, os.path.join(pr, 'variantGroups', 'Common', 'images', icon))
+    make_icon(spec, os.path.join(pr, 'variantGroups', 'Common', 'images', icon), adir)
 
     ir = os.path.join(stage, 'rhmiData')
     os.makedirs(os.path.join(ir, 'uiDescription'))
@@ -570,6 +588,15 @@ def build(app_id, language='en', preview_only=False):
         info = build_start_widget(spec, app_id, os.path.join(ir, 'resources', icon), os.path.join(stage, 'rhmiDataStartWidget'),
                                   os.path.join(src, 'rhmiDataStartWidget'))
         print('  home-screen widget: %s (%s)' % (info['component'], info['layout']))
+
+    if publication is not None:
+        out = os.path.join(DIST, 'store')
+        os.makedirs(out, exist_ok=True)
+        npm = os.path.join(out, f'{app_id}@{ver}.tgz')
+        with gz_header_free(npm) as gz, tarfile.open(fileobj=gz, mode='w') as tf:
+            tf.add(src, arcname='package')
+        print(f'{app_id} {ver}: {os.path.relpath(npm, ROOT)} (SDK-free, MGU Store only)')
+        return npm
 
     # --- installer helpers + metadata ---
     shutil.copytree(os.path.join(KIT, 'tools', 'oapgen'), os.path.join(stage, 'oapgen'))

@@ -2,11 +2,12 @@
 const fs=require('fs'),path=require('path');
 const mgu=require('./kit/mgu'),G=require('./kit/gauges');
 const {Capsules,demo}=require('./model');
-const SHARED='/tmp/mgu-ixdrive-trips.json';
 mgu.run({async start(ctx) {
+    const sourceId=ctx.spec.config && ctx.spec.config.journeySource || 'ixdrive';
+    const SHARED='/tmp/mgu-'+sourceId+'-trips.json';
     const file=path.join(ctx.dataDir,'capsules.json');let state={};
     try{const s=JSON.parse(fs.readFileSync(file,'utf8'));if(s&&typeof s==='object'&&!Array.isArray(s))state=s;}catch(_){}
-    const real=new Capsules(state);let offset=0,stars=false,saved=JSON.stringify(state),demoModel=demo(Date.now());
+    const real=new Capsules(state,sourceId);let offset=0,stars=false,saved=JSON.stringify(state),demoModel=demo(Date.now());
     const isDemo=()=>ctx.settings.get('demo')==='on',model=()=>isDemo()?demoModel:real;
     const save=()=>{
         const data=JSON.stringify(state);if(saved===data)return;

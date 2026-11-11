@@ -2,7 +2,7 @@
   "id": "ixdrive",
   "title": "iXDrive",
   "description": "Battery-electric telemetry for iDrive 7, focused on the G08 iX3: automatic battery-capacity learning and power scales, range, cells, charging estimates and history. iDrive 7 runtime; vehicle diagnostics require validation.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "vendor": "custom",
   "loggingId": "OAXD",
   "iconGlyph": "iX",

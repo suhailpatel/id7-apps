@@ -2,7 +2,7 @@
   "id": "ixobservatory",
   "title": "iX Observatory",
   "description": "Read-only battery, electrical and thermal observatory for BMW iDrive 7. G08 diagnostic candidates require validation.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "vendor": "custom",
   "loggingId": "OK2P",
   "iconGlyph": "iO",

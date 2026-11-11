@@ -20,7 +20,8 @@ function decode(reply,c) {
         const valid=cells.filter(number);if(!valid.length||valid.length<cells.length/2)return null;
         return {cells,min:Math.min(...valid),max:Math.max(...valid),avg:valid.reduce((a,b)=>a+b,0)/valid.length};
     }
-    const out=Object.fromEntries(Object.entries(c.fields||{}).map(([k,f])=>[k,value(bytes,f)]));
+    const out={};
+    for(const [k,f] of Object.entries(c.fields||{}))out[k]=value(bytes,f);
     if(!Object.values(out).some(number))return null;
     if(number(out.min)&&number(out.max)&&(out.min>out.max || number(out.avg)&&(out.avg<out.min||out.avg>out.max)))return null;
     return out;

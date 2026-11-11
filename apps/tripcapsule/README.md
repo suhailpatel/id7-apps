@@ -38,3 +38,10 @@ npm run emulator -- tripcapsule
 
 Demo defaults off in the car. Distance defaults to miles; kilometres remain selectable in Settings.
 Temperature supports Celsius/Fahrenheit. Existing saved unit choices are retained.
+
+
+## Store edition
+
+`suhailpatel_tripcapsule` requires `suhailpatel_ixdrive` and reads
+`/tmp/mgu-suhailpatel_ixdrive-trips.json`. Development installs retain the original
+path above. Each edition keeps its own cards; existing history is not migrated.

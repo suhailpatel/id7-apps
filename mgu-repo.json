@@ -1,67 +1,124 @@
 {
   "schema": 1,
-  "apps": {
-    "path": "apps/*",
-    "manifest": "app.json",
-    "icon": "icon.png",
-    "mguHmi": [
-      "ID7"
-    ],
-    "requires": {
-      "idrive7-renderd": "2.1.7",
-      "mgu-inputgate": "1.0.0"
-    },
-    "build": {
-      "python": "kit/tools/build.py",
-      "args": [
-        "{id}"
-      ],
-      "sdk": "oap-sdk",
-      "output": "dist/{id}@{version}.tgz",
-      "network": [],
-      "shared": [
-        "kit/runtime",
-        "kit/platform",
-        "kit/tools/build.py",
-        "kit/tools/pack_data.py",
-        "kit/tools/localize.py",
-        "kit/tools/locale-revisions.json",
-        "kit/tools/oapgen",
-        "oap-sdk"
-      ]
-    }
-  },
-  "tools": [
+  "components": [
     {
-      "id": "idrive7-renderd",
-      "path": "kit/renderd/prebuilt",
-      "title": "GPU renderer",
-      "description": "The apps' own GPU renderer (mgu-render): draws them at 60 fps, beside the MGU Store's Renderer; installed with the apps",
-      "provides": "renderer",
-      "mguHmi": [
-        "ID7"
-      ]
+      "id": "suhailpatel_ixdrive",
+      "kind": "app",
+      "path": "store/apps/suhailpatel_ixdrive",
+      "manifest": "app.json",
+      "icon": "icon.png",
+      "build": {
+        "python": "kit/tools/build_store.py",
+        "args": [
+          "--component",
+          "{dir}",
+          "--id",
+          "{id}"
+        ],
+        "output": "dist/store/{id}@{version}.tgz",
+        "network": [],
+        "shared": [
+          "kit/runtime",
+          "kit/platform",
+          "kit/tools/build.py",
+          "kit/tools/pack_data.py",
+          "kit/tools/localize.py",
+          "kit/tools/locale-revisions.json",
+          "LICENSE",
+          "NOTICE.zh-CN.md",
+          "docs/PROVENANCE.md",
+          "apps/ixdrive"
+        ]
+      }
     },
     {
-      "id": "mgu-inputgate",
-      "path": "kit/renderd/prebuilt",
-      "version": "1.0.0",
-      "title": "Controller gate",
-      "description": "Lets the apps have the iDrive controller (tabs, page buttons, settings, Doom); loads into the HMI at the next start",
-      "needs": [
-        "renderer"
-      ],
-      "optional": false,
-      "mguHmi": [
-        "ID7"
-      ],
-      "preload": {
-        "library": "mgu-inputgate.so",
-        "unit": "hmi.service",
-        "process": "HmiMain3D",
-        "strikes": 2,
-        "checkAfterSeconds": 120,
-        "healthySeconds": 60
+      "id": "suhailpatel_tyrewatch",
+      "kind": "app",
+      "path": "store/apps/suhailpatel_tyrewatch",
+      "manifest": "app.json",
+      "icon": "icon.png",
+      "build": {
+        "python": "kit/tools/build_store.py",
+        "args": [
+          "--component",
+          "{dir}",
+          "--id",
+          "{id}"
+        ],
+        "output": "dist/store/{id}@{version}.tgz",
+        "network": [],
+        "shared": [
+          "kit/runtime",
+          "kit/platform",
+          "kit/tools/build.py",
+          "kit/tools/pack_data.py",
+          "kit/tools/localize.py",
+          "kit/tools/locale-revisions.json",
+          "LICENSE",
+          "NOTICE.zh-CN.md",
+          "docs/PROVENANCE.md",
+          "apps/tyrewatch"
+        ]
+      }
+    },
+    {
+      "id": "suhailpatel_tripcapsule",
+      "kind": "app",
+      "path": "store/apps/suhailpatel_tripcapsule",
+      "manifest": "app.json",
+      "icon": "icon.png",
+      "build": {
+        "python": "kit/tools/build_store.py",
+        "args": [
+          "--component",
+          "{dir}",
+          "--id",
+          "{id}"
+        ],
+        "output": "dist/store/{id}@{version}.tgz",
+        "network": [],
+        "shared": [
+          "kit/runtime",
+          "kit/platform",
+          "kit/tools/build.py",
+          "kit/tools/pack_data.py",
+          "kit/tools/localize.py",
+          "kit/tools/locale-revisions.json",
+          "LICENSE",
+          "NOTICE.zh-CN.md",
+          "docs/PROVENANCE.md",
+          "apps/tripcapsule"
+        ]
+      }
+    },
+    {
+      "id": "suhailpatel_ixobservatory",
+      "kind": "app",
+      "path": "store/apps/suhailpatel_ixobservatory",
+      "manifest": "app.json",
+      "icon": "icon.png",
+      "build": {
+        "python": "kit/tools/build_store.py",
+        "args": [
+          "--component",
+          "{dir}",
+          "--id",
+          "{id}"
+        ],
+        "output": "dist/store/{id}@{version}.tgz",
+        "network": [],
+        "shared": [
+          "kit/runtime",
+          "kit/platform",
+          "kit/tools/build.py",
+          "kit/tools/pack_data.py",
+          "kit/tools/localize.py",
+          "kit/tools/locale-revisions.json",
+          "LICENSE",
+          "NOTICE.zh-CN.md",
+          "docs/PROVENANCE.md",
+          "apps/ixobservatory"
+        ]
       }
     }
   ]

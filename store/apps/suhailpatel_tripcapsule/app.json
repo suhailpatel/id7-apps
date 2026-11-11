@@ -1,0 +1,21 @@
+{
+  "id": "suhailpatel_tripcapsule",
+  "sourceApp": "tripcapsule",
+  "version": "0.1.1",
+  "title": "Trip Capsule",
+  "description": "Saved journey cards, labels and favourites. Requires iXDrive running for new journeys.",
+  "vendor": "suhailpatel",
+  "author": "suhailpatel",
+  "loggingId": "STCP",
+  "mguHmi": [
+    "ID7"
+  ],
+  "requires": {
+    "mgu-render": "0.6.19",
+    "mgu-deploy": "0.6.9",
+    "suhailpatel_ixdrive": "0.1.1"
+  },
+  "config": {
+    "journeySource": "suhailpatel_ixdrive"
+  }
+}

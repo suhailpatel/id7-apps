@@ -68,7 +68,21 @@ npm run preview -- dist/my_app /tmp/my-app-preview
 The generator creates `apps/my_app/` with its own IDs, settings and a canvas
 screen. See the [development guide](docs/DEVELOPMENT.md) for adding vehicle signals.
 
-### Build for the car
+### Build for MGU Store
+
+```sh
+npm run store:prepare
+npm test
+npm run build:store
+```
+
+The four Store editions use `suhailpatel_` IDs and declare iDrive 7 support.
+SDK-free packages, icons and a catalog are written to `dist/store/`. MGU Store
+supplies the SDK from the owner's head unit. Trip Capsule requires the Store
+edition of iXDrive. See the [publishing guide](docs/PUBLISHING.md) for branch,
+release and USB publishing, and the remaining car checks.
+
+### Private build for the car
 
 Extract your own BMW SDK into `oap-sdk/`, then run:
 
@@ -76,11 +90,11 @@ Extract your own BMW SDK into `oap-sdk/`, then run:
 npm run build -- ixdrive
 ```
 
-Packages are written to `dist/`. The SDK is not included, and preview builds
-cannot be installed on a car. Deployment helpers are in `deploy/`.
+These packages in `dist/` contain your SDK and must remain private. Preview
+builds cannot be installed on a car. Deployment helpers are in `deploy/`.
 
 The [`.gitignore`](.gitignore) excludes the SDK, packages, credentials, vehicle
-captures and other local files. Packages contain BMW's SDK; do not publish them.
+captures and other local files.
 
 ## Repository
 

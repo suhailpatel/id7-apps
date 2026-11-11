@@ -14,9 +14,29 @@ jobs:
         with:
           python-version: '3.12'
       - run: npm test
+      - run: npm run build:store
+      - uses: actions/upload-artifact@v4
+        with:
+          name: id7-store-catalog
+          path: dist/store/
+          if-no-files-found: error
       - run: npm run build:preview
       - name: Verify new-app workflow
         run: |
           npm run new:app -- ci_sample "CI sample"
           npm run build:preview -- ci_sample
           npm run preview -- dist/ci_sample /tmp/id7-ci-preview
+
+  head-unit-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '8.16.2'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 kit/tools/test_store.py
+        env:
+          ID7_RUNTIME_NODE: node

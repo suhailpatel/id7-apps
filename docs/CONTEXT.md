@@ -1,6 +1,6 @@
 # Project handoff — iXDrive / id7-apps
 
-Updated: 10 November 2026 (Europe/London).
+Updated: 11 November 2026 (Europe/London).
 New home: `/Users/Suhail/Development/id7-apps`.
 Previous repo: `/Users/Suhail/Development/idrive7-apps`.
 Source revision: `8048eb091a20c5e2bfe36cda96e938472d2dfdc5`.
@@ -26,7 +26,7 @@ Source revision: `8048eb091a20c5e2bfe36cda96e938472d2dfdc5`.
 
 ## Implemented state
 
-App identity: `ixdrive`, version `0.1.0`, logging ID `OAXD`; separate settings,
+App identity: `ixdrive`, version `0.1.1`, logging ID `OAXD`; separate settings,
 history and home-screen widget. The icon is a white SUV with a cyan lightning bolt
 on black, 140 × 140 PNG, with generation prompt in `apps/ixdrive/icon-prompt.txt`.
 
@@ -84,8 +84,9 @@ plausibility does not establish correct G08 decoding. Capacity and SOH candidate
 lists are deliberately empty. Direct factory capacity detection is not verified;
 current usable capacity is learned if valid SOC/power data are available.
 
-The BMW `oap-sdk` is absent. Preview builds work without it; installable `.mgu`
-and `.tgz` packages require the owner's locally extracted SDK. No deployment has
+The BMW `oap-sdk` is absent. Preview builds work without it. Private builds
+require the owner's locally extracted SDK; Store builds now produce SDK-free
+`.tgz` packages for donor injection by MGU Store. No deployment has
 been performed. No supported signal profile for newer iDrive platforms is promised.
 
 ## Next useful work
@@ -170,3 +171,31 @@ view with battery, motor and coolant temperatures and changes over time.
   passed; all three pages, missing data and Fahrenheit layouts were reviewed.
   Tests: kit/tools/test_ixobservatory.js. Vehicle validation and an SDK build
   remain outstanding; no installation has been requested or performed.
+
+
+## MGU Store preparation — 11 November 2026
+
+All four apps and their Store editions are version `0.1.1`. Trip Capsule requires
+iXDrive `0.1.1` or newer.
+
+- User requested publishing preparation against robertnisipeanu/mgu-store and
+  explicitly chose the `suhailpatel_` prefix. All four apps have generated Store
+  manifests/icons in `store/apps/`, offered by `mgu-repo.json`. Local app IDs and
+  storage remain unchanged. Store editions start with separate data.
+- `npm run store:prepare`, `store:check` and `build:store` manage listings and
+  complete SDK-free packages in `dist/store/`. No SDK is read or copied, even
+  if present locally. Original licences and font notices accompany packages.
+- Dependencies: Store renderer/deploy tools; Trip Capsule additionally requires
+  `suhailpatel_ixdrive`. Shared telemetry paths derive from the installed ID;
+  Trip Capsule checks the source identity. Full dial capture still requires a
+  separately installed controller gate. Collision-renamed iXDrive builds work,
+  but Trip Capsule pairs with the canonical Store iXDrive ID.
+- Removed Node APIs unavailable on the head unit from Observatory. Production
+  target is Node 8.16.2; development tests remain on Node 22. Package smoke checks
+  exercise all pages and companion transport; CI includes the older runtime.
+- See docs/PUBLISHING.md for source-branch/catalog publishing and verification.
+  Prefer those layouts: this Store revision ignores dependencies in loose app
+  package metadata. The public catalog has hashes, sizes, IDs, ID7 compatibility,
+  dependencies and icons. No release, push or vehicle installation was performed.
+- All vehicle-validation limitations above still apply. Range Lab was cancelled
+  before implementation and remains outside scope.

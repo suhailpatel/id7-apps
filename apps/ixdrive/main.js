@@ -498,11 +498,12 @@ mgu.run({
          * - it takes it; null while not read), soc, rangeKm (the range at this charge, as the Range page has it) }.
          * Nothing while the demo runs. */
         // Trip Capsule reads this public summary; each app keeps its own private storage.
-        const TRIPS = '/tmp/mgu-ixdrive-trips.json';
+        const sourceId = ctx.spec.id;
+        const TRIPS = '/tmp/mgu-' + sourceId + '-trips.json';
         const publishTrips = () => {
             try {
-                const out = usingDemo() ? { version: 1, t: Date.now(), source: 'ixdrive', demo: true }
-                    : { version: 1, t: Date.now(), source: 'ixdrive', demo: false,
+                const out = usingDemo() ? { version: 1, t: Date.now(), source: 'ixdrive', sourceId, demo: true }
+                    : { version: 1, t: Date.now(), source: 'ixdrive', sourceId, demo: false,
                         journeys: insights.view().journeys.slice(-200), journey: insights.view().journey || null };
                 fs.writeFileSync(TRIPS + '.tmp', JSON.stringify(out), { mode: 0o644 });
                 fs.chmodSync(TRIPS + '.tmp', 0o644);
@@ -511,7 +512,7 @@ mgu.run({
         };
         setInterval(publishTrips, 5000);
         publishTrips();
-        const SHARED = '/tmp/mgu-ixdrive.json';
+        const SHARED = '/tmp/mgu-' + sourceId + '.json';
         setInterval(() => {
             try {
                 const d = data();

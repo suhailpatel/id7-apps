@@ -152,3 +152,11 @@ published by iXDrive to `/tmp/mgu-ixdrive-trips.json` every five seconds. This
 adds no vehicle polling. Real summaries contain up to 200 completed journeys and
 the current journey; demo mode publishes only a demo marker. The file is readable
 by other local apps, contains no GPS route, and is written atomically.
+
+
+## Store edition
+
+`suhailpatel_ixdrive` keeps separate settings and history from the development
+app. Its shared telemetry files use the installed ID, including
+`/tmp/mgu-suhailpatel_ixdrive-trips.json` for the Store edition of Trip Capsule.
+See [publishing](../../docs/PUBLISHING.md) for SDK-free builds.

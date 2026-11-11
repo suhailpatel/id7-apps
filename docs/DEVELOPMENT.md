@@ -12,8 +12,9 @@
 
 The starter requests no vehicle signals and defaults demo off. Preserve a distinct
 `id` and four-character `loggingId` for each app. A 140 × 140 `icon.png` overrides
-the icon generated from `iconGlyph`. The repository manifest discovers
-`apps/*/app.json`; no manual app registration is required.
+the icon generated from `iconGlyph`. The local builder discovers
+`apps/*/app.json`. Store publishing is opt-in: add a reviewed app to
+`kit/tools/build_store.py` and run `npm run store:prepare`.
 
 ## Runtime basics
 
@@ -47,6 +48,10 @@ installable package. `npm run build -- <id>` requires your locally extracted
 `oap-sdk/`. `kit/tools/extract_sdk.js` is the inherited extraction helper; the SDK
 must come from your own head unit. Native renderer source and deployment helpers
 are available, but deployment is a separate action.
+
+`npm run build:store` builds complete SDK-free packages under prefixed Store IDs.
+See [PUBLISHING.md](PUBLISHING.md). Production JavaScript must run on Node 8.16.2;
+Node 22 is only the development/test runner. CI checks packaged pages on Node 8.
 
 ## Repository maintenance
 

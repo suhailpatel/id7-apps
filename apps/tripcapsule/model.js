@@ -15,14 +15,15 @@ function packet(history,now) {
         journeys:(history.journeys||[]).slice(-200),journey:history.journey||null};
 }
 class Capsules {
-    constructor(state={}) {
+    constructor(state={},sourceId='ixdrive') {
+        this.sourceId=sourceId;
         this.state=state;
         state.cards=Array.isArray(state.cards)?state.cards.filter(j=>j && typeof j.id==='string' && num(j.start) && num(j.end) && num(j.km) && num(j.kwh) && num(j.seconds)).slice(-200):[];
         this.connected=false;
     }
     ingest(data,now) {
         this.connected=false;
-        if(!data || data.version!==1 || data.source!=='ixdrive' || data.demo!==false || !num(data.t) ||
+        if(!data || data.version!==1 || data.source!=='ixdrive' || (data.sourceId||'ixdrive')!==this.sourceId || data.demo!==false || !num(data.t) ||
             data.t>now+1000 || now-data.t>15000 || !Array.isArray(data.journeys) || data.journeys.length>200) return false;
         const incoming=data.journeys.map(j=>clean(j,false)).filter(Boolean);
         const live=clean(data.journey,true);if(live)incoming.push(live);

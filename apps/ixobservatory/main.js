@@ -63,7 +63,7 @@ mgu.run({async start(ctx) {
         G.button(cv,t,872,54,248,38,'Window: '+windowMinutes+' min',act(()=>{windowMinutes=windowMinutes===10?30:windowMinutes===30?60:10;}),{key:'window'});
         const series=[];
         Object.entries(COLOURS).forEach(([key,color])=>m.segments(key,now,windowMinutes).forEach(pts=>series.push({pts:pts.map(([x,y])=>[x,T(y)]),color,width:3})));
-        const vals=series.flatMap(s=>s.pts.map(p=>p[1]));
+        const vals=series.reduce((all,s)=>all.concat(s.pts.map(p=>p[1])),[]);
         let low=vals.length?Math.floor((Math.min(...vals)-3)/5)*5:T(0),high=vals.length?Math.ceil((Math.max(...vals)+3)/5)*5:T(50);
         if(high-low<10)high=low+10;
         G.chart(cv,t,96,138,1000,292,{xMin:-windowMinutes,xMax:0,yMin:low,yMax:high,xFmt:v=>v===0?'now':Math.round(v)+'m',yUnit:unit(),series,empty:vals.length?'':'Temperatures appear as readings arrive'});
