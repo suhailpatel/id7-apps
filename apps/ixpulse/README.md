@@ -24,6 +24,12 @@ Independent app ID and settings; no iXDrive dependency, saved telemetry or learn
   battery percentage, range, observed consumption and next-turn guidance.
   The HUD always uses its independent compact artwork. The Taycan dial uses
   a labelled adaptive signed kW scale, not a percentage of unverified rated power.
+- **Map Companion:** a fourth cluster layout with a dedicated preview page. Its
+  transparent 400 × 72 strip shows battery percentage, remaining **miles** and a
+  tiny signed power/regen bar with kW and a labelled adaptive scale. Miles are
+  fixed for this layout even when the speed preference is km/h. No speed, gear,
+  consumption, turn directions or optional detail row are drawn in the strip;
+  the HUD is unchanged. Select it under **Cluster layout** in Settings.
 - **Speed typeface:** Barlow (clean, default), Michroma (squared) or the original
   condensed digits, across the centre-screen speed, HUD and cluster. Speed fits
   its reserved space even at three digits; units, gear and road signs stay separate.
@@ -37,7 +43,7 @@ Independent app ID and settings; no iXDrive dependency, saved telemetry or learn
   Both default off. The cluster uses a transparent `panel` overlay, not a
   replacement speedometer. Actual visibility and placement require car testing.
 
-Wide layouts grow around the compact artwork's centre at the same scale and
+Alternative layouts grow or shrink around the compact artwork's centre at the same scale and
 placement; saved placement settings are retained. Recheck alignment while parked
 when changing layout. These are overlays, not a full replacement for BMW's cluster.
 
@@ -51,6 +57,16 @@ Once separately installed, configure while parked: enable one alignment pattern,
 adjust its position and size clear of BMW's gauges and warnings, then select On.
 A pattern requires fresh speed at or below 1 km/h. Alignment is intentionally
 blocked when speed is unknown. Building this app does not install it on the car.
+
+**Map Companion placement and map coexistence are untested on the G08.** It uses
+the existing cluster position/size controls and a non-exclusive `panel` image;
+it never creates a `map` layer, takes ownership of navigation or overrides display
+guards. This does not establish that the car will show it alongside a map.
+Parked vehicle checks must confirm its visible position with the actual map,
+map opening/closing and guidance changes, warning visibility, and overlay removal
+when disabled. The preview is the strip alone, not evidence of map coexistence.
+When battery percentage, range and power are all unavailable, its layer is
+released even if speed or gear remains fresh. Demo remains centre-screen only.
 
 ## Navigation and display ownership
 

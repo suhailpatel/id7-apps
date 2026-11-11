@@ -45,9 +45,9 @@ mgu.run({async start(ctx) {
     const pollTimer=setInterval(()=>collector.poll(),5000),projectionTimer=setInterval(project,500),navTimer=setInterval(()=>navReader.poll(),1000);
     [pollTimer,projectionTimer,navTimer].forEach(t=>{if(t.unref)t.unref();});
     const touch=()=>{collector.touch();subscriptions.forEach(s=>{if(s.refresh)s.refresh();});collector.poll();};
-    ctx.ui.onClick('BTN_PAGE',()=>{touch();page=(page+1)%3;return render();});
+    ctx.ui.onClick('BTN_PAGE',()=>{touch();page=(page+1)%4;return render();});
     ctx.ui.onClick('BTN_RESET_AVG',()=>{if(!usingDemo())model.resetAverage();touch();return render();});
-    ctx.onTab(i=>{touch();page=G.clamp(i,0,2);return render();});
+    ctx.onTab(i=>{touch();page=G.clamp(i,0,3);return render();});
     ctx.ui.onVisible((name,visible)=>{if(name==='MAIN'&&visible)touch();});
     ctx.settings.onChange(key=>{if(key==='demo'){epoch++;collector.reset();nav.clear();projection.close();}touch();project();render();});
     process.on('exit',()=>{clearInterval(pollTimer);clearInterval(projectionTimer);clearInterval(navTimer);navReader.stop();projection.close();});
@@ -63,7 +63,7 @@ mgu.run({async start(ctx) {
     }
     function render() {
         const d=current(),t=ctx.theme(),cv=ctx.canvas(1600,520).clear(t.bg),c=Draw.colours(ctx.settings.get('palette'));
-        G.frame(cv,t,['Pulse','Displays','Layouts'],page,[{text:d.demo?'DEMO':!collector.active()?'PAUSED':number(d.kw)||number(d.soc)||number(d.kmh)||number(d.rangeKm)||d.gear||d.limit?'UNVERIFIED DATA':'WAITING FOR CAR',color:t.dim}]);
+        G.frame(cv,t,['Pulse','Displays','Layouts','Map Companion'],page,[{text:d.demo?'DEMO':!collector.active()?'PAUSED':number(d.kw)||number(d.soc)||number(d.kmh)||number(d.rangeKm)||d.gear||d.limit?'UNVERIFIED DATA':'WAITING FOR CAR',color:t.dim}]);
         if(page===0){
             G.panel(cv,t,24,44,1056,468,'Battery power');G.panel(cv,t,1104,44,472,468,'Drive essentials');
             const ink=d.kw<0?c.regen:c.power;
@@ -96,19 +96,25 @@ mgu.run({async start(ctx) {
             cv.text('PACK VOLTAGE',1136,422,20,t.dim,{font:'bold'});cv.text(Draw.fmt(d.volts)+' V',1136,475,40,t.text,{font:'num'});
         }else if(page===1){
             G.panel(cv,t,24,44,760,468,'Head-up display');G.panel(cv,t,808,44,768,468,'Instrument cluster');
-            const style=Draw.styleName(ctx.settings.get('clusterStyle')),wide=style!=='compact';
+            const style=Draw.styleName(ctx.settings.get('clusterStyle')),wide=Draw.dimensions(style).w>400;
             preview(cv,d,134,106,1.35,ctx.settings.get('hud')==='test');
-            preview(cv,d,wide?832:922,106,wide?1:1.35,ctx.settings.get('cluster')==='test',style);
+            preview(cv,d,wide?832:922,style==='companion'?192:106,wide?1:1.35,ctx.settings.get('cluster')==='test',style);
             cv.text(projection.status('hud'),56,440,24,t.text);cv.text(projection.status('cluster'),840,440,24,t.text);
             cv.text('BMW guidance takes over if directions are unavailable',56,485,20,t.dim);
-            cv.text(d.averagePartial?'OBS*: gaps excluded · since app start or reset':'AVG OBS: recorded driving since app start or reset',840,485,20,t.dim);
-        }else{
+            cv.text(style==='companion'?'G08 placement and map coexistence untested':d.averagePartial?'OBS*: gaps excluded · since app start or reset':'AVG OBS: recorded driving since app start or reset',840,485,20,t.dim);
+        }else if(page===2){
             G.panel(cv,t,24,44,760,468,'Taycan · three instruments');G.panel(cv,t,808,44,768,468,'Horizon · wide digital');
             preview(cv,d,44,110,1,false,'taycan');preview(cv,d,832,110,1,false,'horizon');
             cv.text('Energy · speed / power · navigation',56,446,22,t.text);
             cv.text('Large digits · open layout · power strip',840,446,22,t.text);
             cv.text('Choose layout and speed typeface in Settings',56,482,20,t.dim);
             cv.text(d.averagePartial?'OBS*: gaps in readings excluded':'Cluster detail: Battery / Observed trip / Off',840,482,20,t.dim);
+        }else{
+            G.panel(cv,t,24,44,1552,468,'Map Companion · slim cluster overlay');
+            preview(cv,d,480,166,1.6,ctx.settings.get('cluster')==='test','companion');
+            cv.text('Battery · remaining miles · power / regen',800,344,26,t.text,{align:'center'});
+            cv.text('Select Map Companion under Cluster layout in Settings',800,401,23,t.dim,{align:'center'});
+            cv.text('G08 placement and map coexistence untested',800,468,22,t.dim,{align:'center'});
         }
         return ctx.ui.image('MAIN_GFX',cv);
     }

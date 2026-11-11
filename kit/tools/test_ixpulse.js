@@ -258,7 +258,7 @@ test('layout switches resize only the cluster; changed rows stay within each ima
     const opts={hud:'on',cluster:'on',clusterStyle:'compact'},p=createProjection({spec,settings:{get:k=>opts[k]}},FakeClient);
     const d={kw:28,soc:64,flow:'POWER',kmh:60,gear:'D',demo:false};
     p.update(d,true,'');const c=FakeClient.last,hud=Array.from(c.layers.keys())[0];
-    for(const style of ['taycan','horizon','compact','invalid']){
+    for(const style of ['taycan','horizon','companion','compact','invalid']){
         opts.clusterStyle=style;env.now+=500;p.update(d,true,'');
         assert.strictEqual(c.layers.size,2);assert(c.layers.has(hud),'HUD is not recreated');
         const [ref,l]=Array.from(c.layers.entries()).find(e=>e[1].target==='panel'),dim=Draw.dimensions(style);
@@ -277,7 +277,7 @@ test('layout switches resize only the cluster; changed rows stay within each ima
 test('all cluster layouts preserve requested data, units, unknowns and transparent image bounds',async()=>{
     const {Canvas}=require('../runtime/canvas');
     const b=await boot('ixpulse',{demo:'on'});await b.ctx.tab(1);
-    for(const style of Draw.STYLES){
+    for(const style of Draw.STYLES.filter(s=>s!=='companion')){
         b.set('clusterStyle',style);
         for(const unit of ['mph','kmh'])for(const palette of ['colour','white','amber']){
             b.set('speedUnit',unit);b.set('palette',palette);const texts=await b.draw();
@@ -321,6 +321,50 @@ test('font choices retain complete speed digits, equal digit spacing and refresh
     env.now+=500;opts.typeface='michroma';p.update(d,true,'');
     assert.strictEqual(c.frames.length,4);assert.deepStrictEqual(Array.from(c.layers.keys()),refs);
     p.close();
+});
+test('Map Companion is a transparent slim strip with miles and no secondary driving readouts',async()=>{
+    const {Canvas}=require('../runtime/canvas'),{Recorder}=require('../runtime/record');
+    const d={soc:64,rangeKm:286,kw:-12,flow:'REGEN',kmh:88,gear:'D',demo:true,
+        navigation:{turn:{text:'Turn left',arrow:'left',distance:'300 yd',road:'Station Road'}}};
+    assert.deepStrictEqual(Draw.dimensions('companion'),{w:400,h:72});
+    for(const palette of ['colour','white','amber']){
+        const texts=[],rec=new Recorder(400,72),original=rec.text.bind(rec);
+        rec.text=(s,...args)=>{texts.push(s);return original(s,...args);};
+        Draw.draw(rec,d,palette,false,'kmh','companion','michroma',Draw.details(d,'kmh','f','battery'));
+        for(const s of ['64%','178 mi','-12 kW','REGEN'])assert(texts.includes(s));
+        for(const s of ['D','88','Turn left','Station Road'])assert(!texts.includes(s));
+        const cv=Draw.draw(new Canvas(400,72),d,palette,false,'kmh','companion');
+        assert.strictEqual(cv.d[3],0);assert.strictEqual(cv.d[(71*400+399)*4+3],0);
+        assert(cv.d.filter((v,i)=>i%4===3&&v===0).length>400*72*.7,'most of the strip remains transparent');
+    }
+    const b=await boot('ixpulse',{demo:'on',clusterStyle:'companion',speedUnit:'kmh'});await b.ctx.tab(1);
+    let texts=await b.draw();assert(texts.includes('178 mi'));assert(texts.includes('286 km'),'HUD retains its chosen units');
+    assert.strictEqual(texts.filter(s=>s==='D').length,1,'gear appears only in the unchanged HUD');
+    assert(texts.includes('G08 placement and map coexistence untested'));
+    await b.ctx.tab(3);texts=await b.draw();assert(texts.includes('178 mi'));assert(!texts.includes('D'));
+    b.set('demo','off');texts=await b.draw();assert(texts.includes('-- mi'));assert(texts.includes('--%'));assert(texts.includes('-- kW'));
+    b.set('cluster','test');texts=await b.draw();assert(texts.includes('MAP COMPANION · ALIGNMENT'));assert(texts.includes('PARKED ONLY'));b.exit();
+});
+test('Map Companion never claims the map and releases the panel when its own readings expire',()=>{
+    const opts={hud:'on',cluster:'on',clusterStyle:'companion'},p=createProjection({spec,settings:{get:k=>opts[k]}},FakeClient);
+    const d={soc:64,rangeKm:286,kw:50,flow:'POWER',kmh:88,gear:'D',demo:false};
+    p.update(d,true,'');const c=FakeClient.last;
+    const [ref,l]=Array.from(c.layers.entries()).find(e=>e[1].target==='panel');
+    assert.deepStrictEqual([l.iw,l.ih],[400,72]);assert.strictEqual(c.frames[1].bytes,400*72*4);
+    assert.strictEqual(l.klass,'overlay');assert(!l.exclusive&&!l.contend&&!l.guide_hold);
+    assert(!Array.from(c.layers.values()).some(v=>v.target==='map'));
+    env.now+=500;d.navigation={text:'New route'};p.update(d,true,'Yielding to BMW');
+    assert.strictEqual(c.layers.size,1);assert(c.layers.has(ref));assert.strictEqual(c.frames.length,2);
+    env.now+=500;Object.assign(d,{kmh:90,gear:'B',temp:27});opts.speedUnit='kmh';opts.clusterDetail='observed';opts.typeface='michroma';
+    p.update(d,true,'Yielding to BMW');assert.strictEqual(c.frames.length,2,'unshown readings and settings do not repaint');
+    env.now+=500;d.kw=50.1;p.update(d,true,'Yielding to BMW');assert.strictEqual(c.frames.length,3,'scale changes even when rounded kW is unchanged');
+    env.now+=500;d.kw=-12;d.flow='REGEN';p.update(d,true,'Yielding to BMW');assert.strictEqual(c.frames.length,4);
+    const frame=c.frames[3];assert(frame.rects.every(r=>r.w===400&&r.y+r.h<=72));assert(frame.bytes<=400*72*4);
+    env.now+=500;d.kw=null;d.soc=null;p.update(d,true,'Yielding to BMW');assert(c.layers.has(ref),'fresh range alone keeps it useful');
+    d.rangeKm=null;p.update(d,true,'Yielding to BMW');assert.strictEqual(c.layers.size,0);assert(c.closed);
+    assert.strictEqual(p.status('cluster'),'Waiting for car','fresh speed/gear cannot hold an empty companion overlay');
+    d.soc=0;p.update(d,true,'Yielding to BMW');assert.strictEqual(FakeClient.last.layers.size,1,'zero charge is valid');
+    p.update(Object.assign({},d,{demo:true}),true,'');assert.strictEqual(FakeClient.last.layers.size,0);p.close();
 });
 test('main pages render demo and missing data; defaults and all subscriptions preserve read-only gates',async()=>{
     env.now=T;const b=await boot('ixpulse');let texts=await b.draw();assert(texts.includes('WAITING FOR CAR'));assert(texts.includes('--'));

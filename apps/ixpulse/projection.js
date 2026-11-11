@@ -9,8 +9,8 @@ const styleFor=(settings,key)=>key==='cluster'?Draw.styleName(settings.get('clus
 function placement(settings,key) {
     const n=(suffix,fallback)=>{const v=settings.get(key+suffix);return number(v)?v:fallback;};
     const dim=Draw.dimensions(styleFor(settings,key)),k=clamp(n('Size',100),75,125)/100,w=Math.round(dim.w*k),h=Math.round(dim.h*k);
-    // Preserve the compact overlay's saved position; wider styles grow about
-    // its centre so switching layouts does not shift the whole display right.
+    // Preserve the compact overlay's saved position; alternative sizes grow or
+    // shrink about its centre. Placement on the physical G08 is unvalidated.
     return {x:clamp(n('X',key==='hud'?200:760)-Math.round((dim.w-Draw.WIDTH)*k/2),0,(key==='hud'?800:1920)-w),
         y:clamp(n('Y',key==='hud'?100:330)-Math.round((dim.h-Draw.HEIGHT)*k/2),0,(key==='hud'?480:720)-h),w,h};
 }
@@ -43,7 +43,8 @@ function createProjection(ctx,Client=ClusterRender,clock=Date.now) {
             else if(!active)reason='Paused while parked';
             else if(mode==='test'&&(!number(d.kmh)||d.kmh>1))reason='Pattern needs fresh parked speed';
             else if(key==='hud'&&navReason)reason=navReason;
-            else if(mode==='on'&&!number(d.kw)&&!number(d.soc)&&!number(d.kmh)&&!d.limit&&!number(d.rangeKm)&&!d.gear)reason='Waiting for car';
+            else if(mode==='on'&&!number(d.kw)&&!number(d.soc)&&!number(d.rangeKm)&&
+                (styleFor(ctx.settings,key)==='companion'||!number(d.kmh)&&!d.limit&&!d.gear))reason='Waiting for car';
             if(reason){states[key]=reason;drop(key);}else wanted[key]=mode;
         });
         if(!Object.keys(wanted).length){close();return;}
@@ -64,8 +65,10 @@ function createProjection(ctx,Client=ClusterRender,clock=Date.now) {
             }
             const layer=layers[key];
             if(place!==layer.place){client.set(layer.ref,rect);layer.place=place;}
-            const detail=style==='compact'?null:Draw.details(d,ctx.settings.get('speedUnit'),ctx.settings.get('tempUnit'),ctx.settings.get('clusterDetail'));
-            const signature=JSON.stringify([style,detail,d.averagePartial,ctx.settings.get('typeface'),d.kw===null?null:Math.round(d.kw),d.soc===null?null:Math.round(d.soc),d.kmh,d.gear,d.limit,d.flow,d.rangeKm,d.averageKwh100Km,d.navigation,ctx.settings.get('speedUnit'),ctx.settings.get('palette'),wanted[key]]);
+            const detail=style==='compact'||style==='companion'?null:Draw.details(d,ctx.settings.get('speedUnit'),ctx.settings.get('tempUnit'),ctx.settings.get('clusterDetail'));
+            const signature=JSON.stringify(style==='companion'?
+                [style,number(d.kw)?d.kw:null,number(d.soc)?Math.round(d.soc):null,d.flow,d.rangeKm,ctx.settings.get('palette'),wanted[key]]:
+                [style,detail,d.averagePartial,ctx.settings.get('typeface'),d.kw===null?null:Math.round(d.kw),d.soc===null?null:Math.round(d.soc),d.kmh,d.gear,d.limit,d.flow,d.rangeKm,d.averageKwh100Km,d.navigation,ctx.settings.get('speedUnit'),ctx.settings.get('palette'),wanted[key]]);
             if(layer.key!==signature){
                 // Notifications can arrive much faster than the display rate. Gate drawing
                 // as well as uploads; eligibility/drop checks above always run immediately.

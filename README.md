@@ -47,7 +47,8 @@ independently of iXDrive; G08 readings require validation.
 EV battery power, regeneration and charge level, with independent experimental
 HUD and instrument-cluster overlays through Cluster renderer. Projection defaults
 off; placement and G08 telemetry require vehicle validation.
-Includes compact, Taycan-inspired three-instrument and wide digital cluster layouts.
+Includes compact, Taycan-inspired three-instrument, wide digital and slim Map
+Companion cluster layouts. G08 map coexistence remains untested.
 [App guide](apps/ixpulse/README.md).
 
 ## Development

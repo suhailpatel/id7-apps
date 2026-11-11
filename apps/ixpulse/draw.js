@@ -80,9 +80,31 @@ function compact(cv,d,palette,test,speedUnit,typeface) {
     }else cv.text(fit(cv,nav.text||'Navigation unavailable',380,15),8,182,15,c.dim);
     return cv;
 }
-const STYLES=['compact','taycan','horizon'];
+const STYLES=['compact','taycan','horizon','companion'];
 const styleName=style=>STYLES.indexOf(style)>=0?style:'compact';
-const dimensions=style=>styleName(style)==='compact'?{w:WIDTH,h:HEIGHT}:{w:720,h:300};
+const dimensions=style=>styleName(style)==='companion'?{w:400,h:72}:styleName(style)==='compact'?{w:WIDTH,h:HEIGHT}:{w:720,h:300};
+function companion(cv,d,palette,test) {
+    const c=colours(palette),white='#ffffff';cv.clear();
+    if(test){
+        cv.strokeRoundRect(2,2,396,68,4,2,c.power);cv.line(200,4,200,68,1,c.dim);
+        cv.text('MAP COMPANION · ALIGNMENT',200,25,17,white,{align:'center',font:'bold'});
+        cv.text('PARKED ONLY',200,53,14,c.dim,{align:'center'});return cv;
+    }
+    cv.text('BATTERY',8,13,10,c.dim,{font:'bold'});
+    cv.text(fmt(d.soc)+'%',8,44,32,white,{font:'num'});
+    cv.line(99,12,99,47,1,c.dim);
+    cv.text('REMAINING',116,13,10,c.dim,{font:'bold'});
+    // This minimal layout deliberately shows miles regardless of speed units.
+    cv.text(fmt(number(d.rangeKm)?d.rangeKm/1.609344:null)+' mi',116,44,32,white,{font:'num'});
+    const cap=scale(d.kw),zero=326,ink=d.kw<0?c.regen:c.power;
+    cv.text(number(d.kw)?d.flow:'UNAVAILABLE',zero,13,9,c.dim,{align:'center'});
+    cv.fillRect(260,27,132,2,c.dim);cv.fillRect(zero,22,1,12,white);
+    if(number(d.kw)&&d.kw!==0)cv.fillRect(d.kw<0?zero+64*d.kw/cap:zero,25,64*Math.abs(d.kw)/cap,5,ink);
+    cv.text(fmt(d.kw)+' kW',zero,48,16,number(d.kw)?ink:c.dim,{align:'center',font:'num'});
+    cv.text('SCALE +/-'+cap+' kW',zero,64,9,c.dim,{align:'center'});
+    cv.text(d.demo?'DEMO':'UNVERIFIED',8,64,9,c.dim,{font:'bold'});
+    return cv;
+}
 function values(d,speedUnit) {
     const mph=speedUnit!=='kmh';
     return {speed:fmt(number(d.kmh)?d.kmh*(mph?.621371:1):null),unit:mph?'mph':'km/h',
@@ -182,6 +204,7 @@ function horizon(cv,d,c,v) {
 }
 function draw(cv,d,palette,test,speedUnit,style,typeface,detail) {
     style=styleName(style);
+    if(style==='companion')return companion(cv,d,palette,test);
     if(style==='compact')return compact(cv,d,palette,test,speedUnit,typeface);
     const c=colours(palette);cv.clear();
     if(test){

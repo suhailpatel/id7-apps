@@ -490,3 +490,31 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
   variants were visually reviewed. Only iX Pulse and its generated Store version
   changed to `0.1.7`; other app versions are unchanged. Live iX3 validation is
   still outstanding. This change has not been committed, pushed or installed.
+
+### iX Pulse Map Companion — 11 November 2026
+
+- User requested a slim Map Companion cluster layout showing battery percentage,
+  remaining miles and a tiny power/regen bar, with G08 placement and map
+  coexistence explicitly pending testing. iX Pulse `0.1.8` adds the selectable
+  `companion` style and a dedicated preview tab. The transparent artwork is
+  400 × 72, with a signed kW readout and labelled adaptive scale. Range always
+  uses miles in this layout, independently of the speed-unit preference.
+- No speed, gear, average, turn directions or optional detail row are drawn in
+  Map Companion. Existing HUD artwork and other cluster styles remain available.
+  Existing cluster size/position controls apply about the compact layer's centre;
+  no physical position is claimed to be validated. Projection still defaults off.
+- Uses only a non-exclusive `panel` overlay, without contention, guide holds,
+  map layers, map ownership or guard overrides. Navigation changes do not repaint
+  this strip or change its ownership. If its SOC, range and power all expire, the
+  layer is released even if speed/gear remain fresh. Zero SOC is valid. Demo
+  stays centre-screen only; no new vehicle signals or polling were added.
+- **G08 placement and map coexistence remain untested.** The app and README say
+  so. Parked checks still need the actual map open, position/size adjustment, map
+  open/close and guidance transitions, warning visibility and removal when Off.
+  Local previews demonstrate artwork only, not map coexistence on the vehicle.
+- All 22 iX Pulse checks, full `npm test`, `store:check` and all six Store builds
+  passed. Normal, unavailable and parked-alignment previews were visually checked.
+  Tests cover miles, omitted fields, transparency, image bounds, style switching,
+  map-independent layer requests, stale-data release and power-scale refresh.
+  Only iX Pulse and its generated Store version move to `0.1.8`. No commit, push
+  or car installation was performed for this change.

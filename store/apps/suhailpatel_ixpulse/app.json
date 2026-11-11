@@ -1,7 +1,7 @@
 {
   "id": "suhailpatel_ixpulse",
   "sourceApp": "ixpulse",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "title": "iX Pulse",
   "description": "EV driving HUD and cluster: speed, range, observed consumption and navigation turns. Requires Cluster renderer; G08 validation pending.",
   "vendor": "suhailpatel",

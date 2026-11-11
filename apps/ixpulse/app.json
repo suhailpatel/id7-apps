@@ -2,7 +2,7 @@
   "id": "ixpulse",
   "title": "iX Pulse",
   "description": "EV driving HUD and cluster with speed, range, observed average consumption and navigation directions. G08 validation pending.",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "vendor": "custom",
   "loggingId": "OAXP",
   "iconGlyph": "bolt",
@@ -152,6 +152,10 @@
         [
           "horizon",
           "Horizon \u00b7 wide digital"
+        ],
+        [
+          "companion",
+          "Map Companion \u00b7 slim"
         ]
       ]
     },
