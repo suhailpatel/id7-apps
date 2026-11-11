@@ -9,16 +9,17 @@ const zlib = require('zlib');
 
 const DIR = path.join(__dirname, 'fonts');
 const families = Object.create(null);
+const unpack = (name, j) => j.sizes.map((s) => ({
+    size: s.size, ascent: s.ascent, descent: s.descent, atlasW: s.atlasW, atlasH: s.atlasH,
+    glyphs: s.glyphs, _alpha: s.alpha, alpha: null, family: name, cacheKey: j.cacheKey || '',
+}));
 
 function family(name) {
     if (families[name] !== undefined) return families[name];
     let fam = null;
     try {
         const j = JSON.parse(fs.readFileSync(path.join(DIR, name + '.json'), 'utf8'));
-        fam = j.sizes.map((s) => ({
-            size: s.size, ascent: s.ascent, descent: s.descent, atlasW: s.atlasW, atlasH: s.atlasH,
-            glyphs: s.glyphs, _alpha: s.alpha, alpha: null, family: name, cacheKey: j.cacheKey || '',
-        }));
+        fam = unpack(name, j);
     } catch (e) { fam = null; }
     families[name] = fam;
     return fam;
@@ -45,4 +46,14 @@ function measure(f, s) {
     return w;
 }
 
-module.exports = { get, measure };
+/** Register an app-owned atlas without replacing toolkit fonts. The content key
+ * keeps the shared renderer's atlas cache distinct across asset revisions. */
+function register(name, definition) {
+    if (!/^[a-z][a-z0-9_-]+$/.test(name) || !definition || !definition.cacheKey ||
+        !Array.isArray(definition.sizes) || !definition.sizes.length)
+        throw new Error('Invalid app font definition');
+    if (family(name)) throw new Error('Font family already registered: ' + name);
+    families[name] = unpack(name, definition);
+}
+
+module.exports = { get, measure, register };

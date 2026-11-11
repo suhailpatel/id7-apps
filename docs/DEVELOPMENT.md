@@ -26,6 +26,14 @@ software refreshes and integrates with the GPU renderer. Settings are declared
 in `app.json`, read with `ctx.settings.get()` and stored separately per app.
 `ctx.dataDir` is the app's persistent storage folder.
 
+App-owned font atlases can be loaded from a data pack and registered once with
+`require('./kit/fonts').register('myapp-family', definition)`. Use a unique name
+and a content-derived `cacheKey`; the shared renderer uses it to avoid stale glyphs
+after an asset update. Definitions use the same `sizes` format as toolkit fonts.
+Registration cannot replace existing families. Keep font licences in the app's
+`NOTICE`. iX Pulse's `typography.js` is an example; its fonts do not change other
+apps' typography.
+
 Declare only the SOME/IP interfaces an app actually needs in `signals`; use
 `ctx.signals.watch()` to subscribe. Consult `kit/runtime/signals.js`, existing
 apps and `docs/rhmi-widgets.md` for signatures. Diagnostic access uses

@@ -85,6 +85,16 @@ def main():
             if source == 'ixcharge':
                 assert 'suhailpatel_ixdrive' not in pkg['requires']
                 assert spec['config']['legacySource'] == 'suhailpatel_ixdrive'
+            if source == 'ixpulse':
+                assert pkg['requires']['cluster-render'] == '0.5.4'
+                assert data['javascript/LICENSE'] == (ROOT / 'apps/ixpulse/LICENSE').read_bytes()
+                assert b'MPL-2.0' in data['javascript/NOTICE']
+                assert b'SIL OPEN FONT LICENSE Version 1.1' in data['javascript/NOTICE']
+                assert b'The Barlow Project Authors' in data['javascript/NOTICE']
+                assert b'The Michroma Project Authors' in data['javascript/NOTICE']
+                assert data['javascript/typefaces.pack'].startswith(b'MGUPACK1')
+                assert next(s for s in spec['settings'] if s['key'] == 'hud')['default'] == 'off'
+                assert next(s for s in spec['settings'] if s['key'] == 'cluster')['default'] == 'off'
             if source == 'tripcapsule':
                 assert pkg['requires']['suhailpatel_ixdrive'] == store.read(ROOT / 'apps/ixdrive/app.json')['version']
                 assert spec['config']['journeySource'] == 'suhailpatel_ixdrive'

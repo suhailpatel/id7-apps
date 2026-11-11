@@ -2,7 +2,7 @@
   "id": "ixcharge",
   "title": "iXCharge",
   "description": "Independent read-only charging estimates, session history and power curves for BMW iDrive 7. G08 diagnostic candidates await vehicle validation.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "vendor": "custom",
   "loggingId": "OAXC",
   "iconGlyph": "bolt",

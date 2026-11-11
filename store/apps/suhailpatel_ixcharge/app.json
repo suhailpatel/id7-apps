@@ -1,7 +1,7 @@
 {
   "id": "suhailpatel_ixcharge",
   "sourceApp": "ixcharge",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "title": "iXCharge",
   "description": "Independent charging estimates, session history and power curves. G08 telemetry awaits vehicle validation.",
   "vendor": "suhailpatel",

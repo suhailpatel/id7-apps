@@ -42,6 +42,14 @@ A battery and thermal overview, temperature charts and cell voltages. Runs
 independently of iXDrive; G08 readings require validation.
 [App guide](apps/ixobservatory/README.md).
 
+## iX Pulse
+
+EV battery power, regeneration and charge level, with independent experimental
+HUD and instrument-cluster overlays through Cluster renderer. Projection defaults
+off; placement and G08 telemetry require vehicle validation.
+Includes compact, Taycan-inspired three-instrument and wide digital cluster layouts.
+[App guide](apps/ixpulse/README.md).
+
 ## Development
 
 Requires Node.js 22+ and Python 3.10+. Builds are English-only.
@@ -81,7 +89,7 @@ npm test
 npm run build:store
 ```
 
-The five Store editions use `suhailpatel_` IDs and declare iDrive 7 support.
+The six Store editions use `suhailpatel_` IDs and declare iDrive 7 support.
 SDK-free packages, icons and a catalog are written to `dist/store/`. MGU Store
 supplies the SDK from the owner's head unit. Trip Capsule requires the Store
 edition of iXDrive. See the [publishing guide](docs/PUBLISHING.md) for branch,

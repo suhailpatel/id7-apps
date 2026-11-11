@@ -26,7 +26,7 @@ Source revision: `8048eb091a20c5e2bfe36cda96e938472d2dfdc5`.
 
 ## Implemented state
 
-App identity: `ixdrive`, version `0.1.3`, logging ID `OAXD`; separate settings,
+App identity: `ixdrive`, version `0.1.4`, logging ID `OAXD`; separate settings,
 history and home-screen widget. The icon is a white SUV with a cyan lightning bolt
 on black, 140 × 140 PNG, with generation prompt in `apps/ixdrive/icon-prompt.txt`.
 
@@ -299,3 +299,170 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
   rendered and visually reviewed. The capture-aware SDK audit checks 25 signal
   declarations and reproduces no parked reads or stale-voltage integration.
   Nothing was installed on the car or published.
+
+## iX Pulse — 11 November 2026
+
+- User requested an EV-focused version of upstream Redline, projected to both
+  HUD and cluster. Created `apps/ixpulse` with `npm run new:app`; title iX Pulse,
+  ID `ixpulse`, logging ID `OAXP`, version `0.1.1`. Store ID
+  `suhailpatel_ixpulse`, dependency `cluster-render >= 0.5.4`; no iXDrive dependency.
+  Existing app packages/runtime were unchanged and keep their versions.
+- Pulse page shows signed battery kW and charge level with a labelled adaptive
+  display scale, speed, pack temperature and voltage. Displays page previews
+  the same 400 × 130 artwork sent to the renderer. Cyan/green, white and amber;
+  mph default, km/h and Fahrenheit available. Independent placement controls.
+- HUD and cluster default off. Image-only `hud` and `panel` overlays, no shaders,
+  takeover, exclusivity or renderer configuration changes. Changed rows only at
+  a 2 Hz refresh. Only ID7 backend and documented target dimensions accepted.
+  Separate HUD/panel scene IDs are needed for simultaneous projection.
+- X3 HUD overlays can hide the stock guidance card. HUD is released whenever
+  BMW/phone navigation is active, calculating, missing, unknown or stale. All
+  four guidance/provider/CarPlay/Android Auto fields must be fresh and inactive.
+  Read-only declarations and enums match the supplied head-unit catalogue; their
+  live availability remains untested. Missing phone providers can block HUD use.
+- Independent read-only battery collector derives from Observatory: five-second
+  cycles, one request at a time, candidate fallback/backoff and existing parked
+  limits. Only voltage, current, SOC and temperatures are polled. No saved
+  telemetry, capacity assumptions or learning. Battery DIDs remain unvalidated
+  G08 candidates, labelled UNVERIFIED on both projections. Power expires after
+  12 s with a 5 s voltage/current pairing limit; speed 5 s, SOC/temperature 30 s.
+- Demo stays on the centre screen and cannot project or train/persist anything.
+  Alignment patterns require fresh stationary speed; HUD navigation gate still
+  applies. Disconnect drops cached layers before reconnect; inactivity, demo,
+  Off and exit release output. Renderer guards/pop-up yielding stay intact.
+- Uses the unchanged upstream MPL-2.0 cluster_render_client.js, with packaged
+  licence/notice. Other code follows the repository MIT licence. Redline's
+  cooperative HUD claim protocol is not implemented; overlapping custom apps
+  must be disabled. Renderer status cannot prove physical visibility on the iX3.
+- Tests cover freshness, regen classification, navigation gates, collector
+  activity/demo boundaries, projection targets, reconnect/refusal/guard behaviour,
+  real client wire frames, and both pages. Demo, missing-data, alignment, amber,
+  km/h and Fahrenheit previews reviewed. Vehicle projection/telemetry validation
+  remains outstanding; no installation or publication performed. Full `npm test`,
+  `npm run store:check` and `npm run build:store` passed, including all six Store
+  package smoke checks and projection licence/dependency verification.
+
+### iX Pulse driving readouts — 11 November 2026
+
+- User pointed out that the original projections lacked speed and speed limits.
+  Version `0.1.2` now gives speed the largest digits on both projections, adds a
+  reported-limit badge, and retains battery percentage, signed kW and recovery bar.
+  The centre-screen Drive essentials panel also shows the limit. Speed alone can
+  keep an overlay available when battery candidates do not answer.
+- Added subscribe-only `TrafficSignDisplayControl` display notifications using
+  the supplied catalogue's structure and unit/style enums. No added getter or
+  diagnostic polling. Only explicitly valid, certain and unconditional numeric
+  limits are shown; unavailable/uncertain/conditional limits clear immediately,
+  notifications expire after 15 s, and the posted unit is retained independently
+  of the user's speed unit. Numeric scaling and live cadence remain unvalidated.
+- Projection invalidation includes speed, limit and units; rapid notifications
+  cannot redraw/upload more than twice per second. Navigation/expiry eligibility
+  checks still run immediately. Demo, missing values and unit changes are tested.
+  Full `npm test`, Store checks and all six Store builds passed for `0.1.2`.
+  Revised mph, km/h and unavailable-data previews were visually reviewed.
+
+### iX Pulse range, directions and average — 11 November 2026
+
+- User requested remaining range, navigation directions and average kWh on both
+  HUD and cluster. Version `0.1.3` adds a range/consumption row and next-turn strip
+  to the shared 400 × 200 projection image. Speed, limit, SOC and power remain.
+  Default HUD Y is now 100 and cluster Y 330; saved positions remain untouched,
+  so existing users should repeat alignment for the taller image.
+- Range is the reported electric range from `KombiIF.displayRangeElectricVehicle`,
+  paired with explicit `EnvironmentalInformation.UnitBN2020` mileage units.
+  It converts to the app's mph/mi or km/h/km preference. Values expire after 30 s,
+  units after 60 s, reserved/unknown values remain unavailable, and unit changes
+  invalidate old range. G08 numeric scaling still requires live validation.
+  The unrelated infrastructure `Range.mileageKilometre` is not used as EV range.
+- AVG OBS means net kWh per 100 mi/km from matched battery power and speed this
+  app observes, appearing after 1 km. Includes observed regen and stationary
+  draw; excludes possible stationary charging. Missing/invalid inputs and gaps
+  over 10 s break continuity, with no gap interpolation. No persistent history
+  or capacity learning. Resets on app restart, demo transitions or Reset average.
+  This is not the car's trip-computer average; candidate battery decoding applies.
+- BMW directions use `Guidance.conclusiveDart` reads while guiding; phone routes
+  use read-only `GuidanceEventList.queryContent`, one outstanding 900 ms request
+  at a time, once per second with failure backoff. Next turn, distance and road
+  only, no destination writes, location logs or route storage. Redline's MIT
+  manoeuvre decoder is adapted with attribution; own lifecycle/collection code.
+- Native/phone provider matching, 3 s turn expiry, activeRouteChanged, cancellation,
+  provider and demo generations prevent old arrows. Unsupported/unreliable next
+  manoeuvres cannot be replaced with a later known turn. On route start the HUD
+  allows 3 s for the first turn; absent/stale directions then hand it back to BMW
+  for the rest of that route. Cluster directions can resume independently.
+  Unknown/calculating/stale route state also releases HUD. No guard overrides.
+- New declarations (nine signal fields plus methods/events/instances) match the
+  supplied head-unit catalogue. Tests cover units/sentinels, observed consumption,
+  gaps/reset, native/phone turns, reroutes, stale/unsupported directions and bounded
+  queries with late-response rejection. Vehicle validation is still outstanding.
+  Full `npm test`, `store:check` and all six Store builds passed for `0.1.3`.
+  Demo, unavailable-data and km/h/amber projection layouts were visually reviewed.
+  No installation, commit, push or remote publication was performed.
+
+### iX Pulse current gear — 11 November 2026
+
+- User requested current gear in both HUD and cluster. Version `0.1.4` adds a
+  GEAR readout beside speed without enlarging or moving the projection layer.
+- Subscribe-only `VehicleInformation.statusGearboxDrive` and `DataPowerTrain2`
+  decode explicit P/R/N/D selector positions; forward gear enums show D for the EV.
+  Fresh MDrive `dataDisplayGearbox.B_PROGRAMM` shows B only with a fresh D selector.
+  P/R/N override programme information. No speed/RPM inference or gear learning.
+- Latest selector reports replace older ones, including ambiguous N/P and invalid
+  values. Five-second expiry and demo reset prevent stale gear. Gear-only data can
+  keep an output available; changes/expiry invalidate both cached projection images.
+- All three field declarations and enums match the supplied head-unit catalogue;
+  actual G08 notification cadence, availability and B mode remain unvalidated.
+  No diagnostic polling or vehicle writes added. Tests cover enum variants,
+  ambiguity, expiry, B precedence, output refresh and demo isolation.
+  Full `npm test`, Store checks and all six Store builds passed for `0.1.4`.
+  Demo and unavailable-gear projections were rendered and visually reviewed.
+  Nothing was installed on the car or published.
+
+### iX Pulse cluster layouts — 11 November 2026
+
+- User requested alternative cluster layouts, particularly the Porsche Taycan.
+  Version `0.1.5` adds selectable Taycan-inspired three-instrument and Horizon
+  wide digital layouts, plus a Layouts page for side-by-side comparison.
+  Porsche's classic curved cluster and Audi's e-tron GT cockpit were reviewed;
+  artwork is original canvas drawing, with no imported manufacturer assets.
+- Both new layouts retain speed, current gear, reported speed limit and its unit,
+  charge level, remaining range, observed average consumption, signed battery kW,
+  and next-turn navigation. The Taycan centre dial uses a labelled adaptive kW
+  scale, not unverified rated power. No simulated maps or new vehicle signals.
+- Compact remains the default; HUD stays 400 × 200. Wide cluster images are
+  720 × 300, expanded around the compact image's centre and clamped to the panel.
+  Size changes recreate only the cluster image; same-size style changes redraw
+  it. Updated row uploads use each image's dimensions and retain the 2 Hz cap.
+  Both outputs still default off; all existing telemetry/demo/guard rules apply.
+- All 17 iX Pulse checks, the full `npm test`, `store:check` and all six Store
+  package builds passed. Store metadata matches `0.1.5`. Demo, missing-data,
+  km/h/amber, alignment and side-by-side screens were rendered and inspected.
+  G08 telemetry, renderer visibility and physical alignment remain unvalidated;
+  recheck parked alignment when changing to a wider layout. No car installation,
+  commit, push or publication was performed.
+
+### iX Pulse typography from bimmer-lab — 11 November 2026
+
+- Reviewed `bimmer-lab/apps` at revision
+  `e212b4cb8dc09eec9d2ad5e806e949ec0a0a12da`: Cluster Themes, HUD Widgets,
+  font sources, pre-rendered atlases and licences. iX Pulse `0.1.6` adds Barlow
+  Semi Condensed speed digits (default), squared Michroma digits and the original
+  condensed option. Selection applies to centre-screen speed, HUD and cluster.
+  Wider cluster views also gain a reported-SOC strip inspired by their readouts.
+- Only two font atlases are imported, retaining original glyph artwork/advances;
+  their SHA-256 hashes and source revision are pinned in
+  `kit/tools/import_ixpulse_fonts.js`. Assets ship in `typefaces.pack`, about 15 KB,
+  and retain SIL OFL 1.1 with both copyright notices in the app's `NOTICE`. No
+  combustion gauges, control writes, maps or full-cluster takeover were imported.
+- Shared font support now registers app-owned atlases with content-keyed renderer
+  caching and refuses replacement of existing font families. Other apps keep
+  their existing fonts. Because the shared runtime ships in all packages, versions
+  are iXDrive/Trip Capsule `0.1.4`, iXCharge `0.1.2`, TyreWatch/iX Observatory
+  `0.1.3`, iX Pulse `0.1.6`. Store metadata was regenerated; Trip Capsule's minimum
+  iXDrive version follows `0.1.4`. App IDs/storage remain unchanged.
+- Full `npm test`, `store:check`, and all six Store builds passed. Checks cover
+  protected built-in fonts, atlas revisions, equal digit spacing, three-digit
+  fitting, recorded/software glyph agreement, projection font changes and packaged
+  font licences/assets. Both typefaces, missing data and three-digit cluster/HUD
+  views were rendered and inspected. Live G08 validation remains outstanding.
+  No car installation, commit, push or publication was performed.

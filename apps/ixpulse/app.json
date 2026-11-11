@@ -1,0 +1,522 @@
+{
+  "id": "ixpulse",
+  "title": "iX Pulse",
+  "description": "EV driving HUD and cluster with speed, range, observed average consumption and navigation directions. G08 validation pending.",
+  "version": "0.1.6",
+  "vendor": "custom",
+  "loggingId": "OAXP",
+  "iconGlyph": "bolt",
+  "signals": {
+    "com.harman.infotainment.systemfunctions.tasu.tasu.InternalTasu": {
+      "_instances": "SystemFunctionsInternalTasuInst1",
+      "_methods": [
+        "sendTasuRequest"
+      ],
+      "_broadcasts": [
+        "sendTasuResponse"
+      ]
+    },
+    "de.bmw.infotainment.vehicle.Vehicle2": {
+      "statusCarSpeed2": "rs"
+    },
+    "de.bmw.infotainment.navigation.guiding.Guidance": {
+      "_instances": "Main_Instance",
+      "_optional": "HUD yields when navigation state is unavailable",
+      "guidanceState": "rs",
+      "guidingProvider": "rs",
+      "conclusiveDart": "rs",
+      "_broadcasts": [
+        "activeRouteChanged"
+      ]
+    },
+    "de.bmw.infotainment.a4a.carplay.CarPlayManager": {
+      "_instances": "CarPlayManagerInst1",
+      "_optional": "HUD yields when navigation state is unavailable",
+      "projectedGuidanceActive": "rs"
+    },
+    "de.bmw.infotainment.sdi.aap.androidautoprojectedmanager.AndroidAutoProjectedManager": {
+      "_instances": "AndroidAutoProjectedManagerInst1",
+      "_optional": "HUD yields when navigation state is unavailable",
+      "projectedGuidanceActive": "rs"
+    },
+    "de.bmw.dass.driverassistanceapplications.TrafficSignDisplayControl": {
+      "_instances": "1",
+      "_optional": "Reported speed limit; unavailable without fresh valid notifications",
+      "displaySpeedLimitAndNoPassingRestriction": "s"
+    },
+    "de.bmw.infotainment.KombiIF": {
+      "_instances": "1",
+      "_optional": "Reported electric range",
+      "displayRangeElectricVehicle": "rs"
+    },
+    "de.bmw.infrastructure.EnvironmentalInformation": {
+      "_instances": "1",
+      "_optional": "Explicit distance unit for electric range",
+      "UnitBN2020": "rs"
+    },
+    "de.bmw.infotainment.navigation.guiding.GuidanceEventList": {
+      "_instances": "Main_Instance",
+      "_optional": "Readable phone navigation turns",
+      "_methods": [
+        "queryContent"
+      ]
+    },
+    "de.bmw.infrastructure.VehicleInformation": {
+      "_instances": "1",
+      "_optional": "Reported selector position",
+      "statusGearboxDrive": "s",
+      "DataPowerTrain2": "s"
+    },
+    "de.bmw.infotainment.misc.MDrive": {
+      "_instances": "1",
+      "_optional": "Explicit B programme when available",
+      "dataDisplayGearbox": "s"
+    }
+  },
+  "screens": [
+    {
+      "name": "MAIN",
+      "kind": "canvas",
+      "title": "iX Pulse",
+      "buttons": [
+        [
+          "BTN_PAGE",
+          "Next page"
+        ],
+        [
+          "BTN_RESET_AVG",
+          "Reset average"
+        ],
+        [
+          "BTN_SETTINGS",
+          "Settings"
+        ]
+      ]
+    }
+  ],
+  "settings": [
+    {
+      "key": "hud",
+      "label": "HUD (experimental)",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Off"
+        ],
+        [
+          "on",
+          "On"
+        ],
+        [
+          "test",
+          "Alignment pattern (parked)"
+        ]
+      ]
+    },
+    {
+      "key": "cluster",
+      "label": "Cluster (experimental)",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Off"
+        ],
+        [
+          "on",
+          "On"
+        ],
+        [
+          "test",
+          "Alignment pattern (parked)"
+        ]
+      ]
+    },
+    {
+      "key": "clusterStyle",
+      "label": "Cluster layout",
+      "type": "choice",
+      "default": "compact",
+      "options": [
+        [
+          "compact",
+          "Compact (original)"
+        ],
+        [
+          "taycan",
+          "Taycan \u00b7 three instruments"
+        ],
+        [
+          "horizon",
+          "Horizon \u00b7 wide digital"
+        ]
+      ]
+    },
+    {
+      "key": "typeface",
+      "label": "Speed typeface",
+      "type": "choice",
+      "default": "barlow",
+      "options": [
+        [
+          "barlow",
+          "Barlow \u00b7 clean"
+        ],
+        [
+          "michroma",
+          "Michroma \u00b7 squared"
+        ],
+        [
+          "original",
+          "Original \u00b7 condensed"
+        ]
+      ]
+    },
+    {
+      "key": "palette",
+      "label": "Projection colours",
+      "type": "choice",
+      "default": "colour",
+      "options": [
+        [
+          "colour",
+          "Cyan / green"
+        ],
+        [
+          "white",
+          "White"
+        ],
+        [
+          "amber",
+          "Amber"
+        ]
+      ]
+    },
+    {
+      "key": "speedUnit",
+      "label": "Speed unit",
+      "type": "choice",
+      "default": "mph",
+      "options": [
+        [
+          "mph",
+          "mph"
+        ],
+        [
+          "kmh",
+          "km/h"
+        ]
+      ]
+    },
+    {
+      "key": "tempUnit",
+      "label": "Temperature",
+      "type": "choice",
+      "default": "c",
+      "options": [
+        [
+          "c",
+          "Celsius"
+        ],
+        [
+          "f",
+          "Fahrenheit"
+        ]
+      ]
+    },
+    {
+      "key": "hudX",
+      "label": "HUD left / right",
+      "type": "number",
+      "default": 200,
+      "unit": "px",
+      "steps": [
+        120,
+        140,
+        160,
+        180,
+        200,
+        220,
+        240,
+        260,
+        280
+      ]
+    },
+    {
+      "key": "hudY",
+      "label": "HUD up / down",
+      "type": "number",
+      "default": 100,
+      "unit": "px",
+      "steps": [
+        100,
+        120,
+        140,
+        160,
+        180,
+        200,
+        220,
+        240
+      ]
+    },
+    {
+      "key": "hudSize",
+      "label": "HUD size",
+      "type": "number",
+      "default": 100,
+      "unit": "%",
+      "steps": [
+        75,
+        90,
+        100,
+        110,
+        125
+      ]
+    },
+    {
+      "key": "clusterX",
+      "label": "Cluster left / right",
+      "type": "number",
+      "default": 760,
+      "unit": "px",
+      "steps": [
+        560,
+        600,
+        640,
+        680,
+        720,
+        760,
+        800,
+        840,
+        880,
+        920,
+        960
+      ]
+    },
+    {
+      "key": "clusterY",
+      "label": "Cluster up / down",
+      "type": "number",
+      "default": 330,
+      "unit": "px",
+      "steps": [
+        290,
+        310,
+        330,
+        350,
+        370,
+        390,
+        410,
+        430,
+        450,
+        470,
+        490,
+        510,
+        530
+      ]
+    },
+    {
+      "key": "clusterSize",
+      "label": "Cluster size",
+      "type": "number",
+      "default": 100,
+      "unit": "%",
+      "steps": [
+        75,
+        90,
+        100,
+        110,
+        125
+      ]
+    },
+    {
+      "key": "theme",
+      "label": "Colour theme",
+      "type": "choice",
+      "default": "ice",
+      "options": [
+        [
+          "m_red",
+          "M Red"
+        ],
+        [
+          "m_tricolour",
+          "M Tricolour"
+        ],
+        [
+          "ice",
+          "Ice White"
+        ],
+        [
+          "amber",
+          "Night Amber"
+        ]
+      ]
+    },
+    {
+      "key": "layout",
+      "label": "Screen layout",
+      "type": "choice",
+      "default": "full",
+      "options": [
+        [
+          "full",
+          "Full screen"
+        ],
+        [
+          "standard",
+          "Standard"
+        ]
+      ]
+    },
+    {
+      "key": "renderer",
+      "label": "Renderer",
+      "type": "choice",
+      "default": "auto",
+      "options": [
+        [
+          "auto",
+          "GPU 60 fps (default)"
+        ],
+        [
+          "software",
+          "Software"
+        ]
+      ]
+    },
+    {
+      "key": "demo",
+      "label": "Demo data",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Never"
+        ],
+        [
+          "on",
+          "Always"
+        ]
+      ]
+    }
+  ],
+  "config": {
+    "ecu": 7,
+    "powerSign": -1,
+    "groups": {
+      "hvV": [
+        {
+          "did": "DDB4",
+          "timeoutMs": 600,
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          },
+          "note": "confirmed on the X5 45e"
+        },
+        {
+          "did": "DD68",
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          }
+        },
+        {
+          "did": "DD66",
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          }
+        },
+        {
+          "did": "DDEF",
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 1,
+              "min": 150,
+              "max": 500
+            }
+          }
+        }
+      ],
+      "hvI": [
+        {
+          "did": "DD69",
+          "timeoutMs": 600,
+          "fields": {
+            "a": {
+              "bytes": 4,
+              "factor": 0.01,
+              "signed": true,
+              "min": -2000,
+              "max": 2000
+            }
+          }
+        }
+      ],
+      "soc": [
+        {
+          "did": "DDBC",
+          "fields": {
+            "pct": {
+              "bytes": 2,
+              "factor": 0.1,
+              "min": 0,
+              "max": 100
+            }
+          }
+        }
+      ],
+      "cellT": [
+        {
+          "did": "DDC0",
+          "fields": {
+            "min": {
+              "at": 0,
+              "bytes": 2,
+              "factor": 0.01,
+              "signed": true,
+              "min": -40,
+              "max": 80
+            },
+            "max": {
+              "at": 2,
+              "bytes": 2,
+              "factor": 0.01,
+              "signed": true,
+              "min": -40,
+              "max": 80
+            },
+            "avg": {
+              "at": 4,
+              "bytes": 2,
+              "factor": 0.01,
+              "signed": true,
+              "min": -40,
+              "max": 80
+            }
+          }
+        }
+      ]
+    },
+    "provenance": "Inherited iXDrive/eDrive battery diagnostic candidates. Not validated on G08 iX3."
+  }
+}

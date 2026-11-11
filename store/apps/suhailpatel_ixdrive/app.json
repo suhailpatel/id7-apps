@@ -1,7 +1,7 @@
 {
   "id": "suhailpatel_ixdrive",
   "sourceApp": "ixdrive",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "title": "iXDrive",
   "description": "EV range, energy, battery and journey dashboard. G08 telemetry awaits vehicle validation.",
   "vendor": "suhailpatel",

@@ -18,6 +18,7 @@ APPS = {
     'tyrewatch': ('STYW', 'Tyre pressure, temperature and cool-reading history. G08 field mapping awaits vehicle validation.'),
     'tripcapsule': ('STCP', 'Saved journey cards, labels and favourites. Requires iXDrive running for new journeys.'),
     'ixobservatory': ('SIXO', 'Battery and thermal overview, temperature charts and cell voltages. G08 telemetry awaits vehicle validation.'),
+    'ixpulse': ('SIXP', 'EV driving HUD and cluster: speed, range, observed consumption and navigation turns. Requires Cluster renderer; G08 validation pending.'),
 }
 SHARED = ['kit/runtime', 'kit/platform', 'kit/tools/build.py', 'kit/tools/pack_data.py',
           'kit/tools/localize.py', 'kit/tools/locale-revisions.json', 'LICENSE', 'NOTICE.zh-CN.md', 'docs/PROVENANCE.md']
@@ -40,6 +41,8 @@ def listings():
         directory = 'store/apps/' + app_id
         requires = {'mgu-render': '0.6.19', 'mgu-deploy': '0.6.9'}
         config = {}
+        if source == 'ixpulse':
+            requires['cluster-render'] = '0.5.4'
         if source == 'ixcharge':
             config['legacySource'] = PREFIX + 'ixdrive'
         if source == 'tripcapsule':
