@@ -19,6 +19,7 @@ APPS = {
     'tripcapsule': ('STCP', 'Saved journey cards, labels and favourites. Requires iXDrive running for new journeys.'),
     'ixobservatory': ('SIXO', 'Battery and thermal overview, temperature charts and cell voltages. G08 telemetry awaits vehicle validation.'),
     'ixpulse': ('SIXP', 'EV driving HUD and cluster: speed, range, observed consumption and navigation turns. Requires Cluster renderer; G08 validation pending.'),
+    'ixservice': ('SIXS', 'Read-only BMW service reminders and a Check Control timeline. G08 validation pending.'),
 }
 SHARED = ['kit/runtime', 'kit/platform', 'kit/tools/build.py', 'kit/tools/pack_data.py',
           'kit/tools/localize.py', 'kit/tools/locale-revisions.json', 'LICENSE', 'NOTICE.zh-CN.md', 'docs/PROVENANCE.md']

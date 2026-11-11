@@ -22,17 +22,21 @@ async function boot(id,settings={},dir) {
     timers=[];const file=path.join(ROOT,'apps',id,'main.js');delete require.cache[file];require(file);
     const spec=require(path.join(ROOT,'apps',id,'app.json')),opts=Object.fromEntries(spec.settings.map(s=>[s.key,s.default]));Object.assign(opts,settings);
     dir=dir||fs.mkdtempSync(path.join(os.tmpdir(),id+'-test-'));dirs.push(dir);
-    const clicks={},watchers={},changes=[],texts=[],requests=[];
+    const clicks={},watchers={},changes=[],texts=[],requests=[],subscriptions={};
     const {Recorder}=require(path.join(KIT,'record'));
     const ctx={spec,dataDir:dir,settings:{get:k=>opts[k],onChange:fn=>changes.push(fn)},
         log:{info(){},warn(){}},theme:()=>require(path.join(KIT,'themes')).theme('ice'),
         canvas:(w,h)=>{texts.length=0;const cv=new Recorder(w,h);cv.own=true;const text=cv.text.bind(cv);cv.text=(s,...args)=>{texts.push(String(s));return text(s,...args);};return cv;},
         ui:{onClick:(k,fn)=>clicks[k]=fn,onVisible:fn=>ctx.visible=fn,image:async()=>{}},
-        signals:{watch:async(iface,version,h)=>{Object.assign(watchers,h);return {available:true,proxy:{getValue:async f=>{requests.push(f);return {};}}};}},
+        signals:{watch:async(iface,version,h,log,opts)=>{
+            Object.assign(watchers,h);
+            const sub={available:true,proxy:{getValue:async f=>{requests.push(f);return {};}}};
+            subscriptions[iface]={sub,opts};return sub;
+        }},
         onTab:fn=>ctx.tab=fn,onScroll:fn=>ctx.scroll=fn,loop:(name,fps,fn)=>ctx.frame=fn};
     const before=process.listeners('exit');await app.start(ctx);
     const exits=process.listeners('exit').filter(fn=>!before.includes(fn));exits.forEach(fn=>process.removeListener('exit',fn));
-    return {dir,clicks,watchers,requests,ctx,texts,timers:timers.slice(),draw:async()=>{await ctx.frame();return texts;},
+    return {dir,clicks,watchers,requests,subscriptions,ctx,texts,timers:timers.slice(),draw:async()=>{await ctx.frame();return texts;},
         set:(k,v)=>{opts[k]=v;changes.forEach(fn=>fn(k));},exit:()=>exits.forEach(fn=>fn())};
 }
 async function run(checks) {let fail=0;for(const [name,fn]of checks){try{await fn();console.log('PASS '+name);}catch(e){fail++;console.error('FAIL '+name+'\n'+e.stack);}}

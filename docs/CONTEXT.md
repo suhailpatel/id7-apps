@@ -518,3 +518,23 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
   map-independent layer requests, stale-data release and power-scale refresh.
   Only iX Pulse and its generated Store version move to `0.1.8`. No commit, push
   or car installation was performed for this change.
+
+## iX Service — 11 November 2026
+
+- Standalone app `ixservice` at `0.1.0`, Store ID `suhailpatel_ixservice`.
+  Service shows BMW's service requirements and next-service summary. Check
+  Control shows active BMW message IDs and titles when the cluster supplies them.
+  History retains up to 150 observed changes in private `service.json`.
+- Read-only instance 1 fields: `KombiInterface_2.cbsDataServiceList`,
+  `cbsDataSBA` and `ccList`, plus `CheckControlMaster.basicList`. Verified
+  declarations and data shapes against the captured G08 catalogue. Live
+  delivery, list semantics, service text and colours still need on-car checks.
+- Four getters at most, serially, every 30 seconds while the main screen is
+  visible and within ten minutes of interaction. Passive notifications can
+  arrive while the app runs hidden. Live data expires after two minutes or on
+  detected provider loss. No inferred resolutions across gaps or malformed lists.
+  Explicit demo fixtures never modify real history. No diagnostic scans or resets.
+- Five focused tests, full `npm test` with packaged Node 8.16.2 checks, catalogue
+  checks, `store:check` and all seven Store builds passed. Demo and unavailable
+  states were visually reviewed on all three pages. No car installation or
+  publication was performed.

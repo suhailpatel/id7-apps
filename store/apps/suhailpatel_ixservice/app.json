@@ -1,0 +1,18 @@
+{
+  "id": "suhailpatel_ixservice",
+  "sourceApp": "ixservice",
+  "version": "0.1.0",
+  "title": "iX Service",
+  "description": "Read-only BMW service reminders and a Check Control timeline. G08 validation pending.",
+  "vendor": "suhailpatel",
+  "author": "suhailpatel",
+  "loggingId": "SIXS",
+  "mguHmi": [
+    "ID7"
+  ],
+  "requires": {
+    "mgu-render": "0.6.19",
+    "mgu-deploy": "0.6.9"
+  },
+  "config": {}
+}

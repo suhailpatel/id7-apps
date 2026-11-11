@@ -51,6 +51,12 @@ Includes compact, Taycan-inspired three-instrument, wide digital and slim Map
 Companion cluster layouts. G08 map coexistence remains untested.
 [App guide](apps/ixpulse/README.md).
 
+## iX Service
+
+BMW service reminders, active Check Control messages and a local warning timeline.
+Read-only and independent of the other apps. G08 readings need vehicle validation.
+[App guide](apps/ixservice/README.md).
+
 ## Development
 
 Requires Node.js 22+ and Python 3.10+. Builds are English-only.
@@ -90,7 +96,7 @@ npm test
 npm run build:store
 ```
 
-The six Store editions use `suhailpatel_` IDs and declare iDrive 7 support.
+The seven Store editions use `suhailpatel_` IDs and declare iDrive 7 support.
 SDK-free packages, icons and a catalog are written to `dist/store/`. MGU Store
 supplies the SDK from the owner's head unit. Trip Capsule requires the Store
 edition of iXDrive. See the [publishing guide](docs/PUBLISHING.md) for branch,

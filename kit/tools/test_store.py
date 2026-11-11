@@ -98,6 +98,15 @@ def main():
             if source == 'tripcapsule':
                 assert pkg['requires']['suhailpatel_ixdrive'] == store.read(ROOT / 'apps/ixdrive/app.json')['version']
                 assert spec['config']['journeySource'] == 'suhailpatel_ixdrive'
+            if source == 'ixservice':
+                proxies = json.loads(data['manifest.json'])['proxies']
+                signals = {
+                    'de.bmw.infotainment.KombiInterface_2': {'cbsDataServiceList': 'rs', 'cbsDataSBA': 'rs', 'ccList': 'rs'},
+                    'de.bmw.infotainment.checkcontrol.CheckControlMaster': {'basicList': 'rs'},
+                }
+                for iface, fields in signals.items():
+                    assert proxies[iface] == {'instances': '1', 'attributes': fields}
+                assert all('tasu' not in iface.lower() for iface in proxies)
             app_data = root / ('data-' + source)
             app_data.mkdir()
             node = os.environ.get('ID7_RUNTIME_NODE', 'node')

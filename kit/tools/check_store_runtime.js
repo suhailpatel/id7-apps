@@ -44,7 +44,7 @@ async function main(){
     for(const setting of ['off','on']){
         opts.demo=setting;changes.forEach(fn=>fn('demo'));
         // Exercise every page and its drawing helpers, not only module parsing.
-        const count=/ixdrive\d*$/.test(spec.id)?6:/(ixobservatory|ixcharge)\d*$/.test(spec.id)?3:2;
+        const count=/ixdrive\d*$/.test(spec.id)?6:/(ixobservatory|ixcharge|ixservice)\d*$/.test(spec.id)?3:2;
         for(let i=0;i<count;i++){
             texts.length=0;
             if(ctx.tab)await ctx.tab(i);

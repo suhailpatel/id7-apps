@@ -13,12 +13,13 @@ revision `fc79a75f07f364c69165dec830f2fa4553ff20e4`, on 11 November 2026.
 | Trip Capsule | `suhailpatel_tripcapsule` | `tripcapsule` |
 | iX Observatory | `suhailpatel_ixobservatory` | `ixobservatory` |
 | iX Pulse | `suhailpatel_ixpulse` | `ixpulse` |
+| iX Service | `suhailpatel_ixservice` | `ixservice` |
 
 The display names and icons stay the same. Store editions have separate settings,
 history, RHMI identities and logging IDs. Existing development installs retain
 their data; installing a Store edition does not migrate that data.
 
-All six declare **ID7 only**, demo off and no internet requirement. iXDrive and
+All seven declare **ID7 only**, demo off and no internet requirement. iXDrive and
 Trip Capsule default to miles. Trip Capsule requires the Store edition of iXDrive
 and reads its fresh journey summaries while both apps run. It does not import
 journeys from a development install. Shared files use the installed iXDrive ID:
@@ -43,7 +44,7 @@ Store descriptions and dependency versions are in `kit/tools/build_store.py`.
 New scaffolded apps are not offered until added there. `npm run store:check`
 checks for stale generated files without changing them.
 
-`build:store` writes six complete OAP `.tgz` packages, six icons, `catalog.json`
+`build:store` writes seven complete OAP `.tgz` packages, seven icons, `catalog.json`
 and `mgu-store.json` to `dist/store/`. It never reads or copies `oap-sdk/`, even
 when one is present locally. Packages include ID7 UI resources, the iXDrive
 widget, original licence notices and font notices. MGU Store supplies the SDK
@@ -57,7 +58,7 @@ not installable. All build outputs remain ignored by Git.
 
 After reviewing and committing the changes, push them to
 `suhailpatel/id7-apps`. In MGU Store, add that GitHub repository and choose its
-branch channel. The root `mgu-repo.json` lists the six apps and instructs the
+branch channel. The root `mgu-repo.json` lists the seven apps and instructs the
 Store to build each from source, without network access or SDK extraction.
 
 The Store installs its Python tool for source builds. Each app requires

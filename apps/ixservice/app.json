@@ -1,0 +1,110 @@
+{
+  "id": "ixservice",
+  "title": "iX Service",
+  "description": "BMW service reminders and observed Check Control history for iDrive 7. G08 validation pending.",
+  "version": "0.1.0",
+  "vendor": "custom",
+  "loggingId": "OSVP",
+  "iconGlyph": "XS",
+  "signals": {
+    "de.bmw.infotainment.KombiInterface_2": {
+      "cbsDataServiceList": "rs",
+      "cbsDataSBA": "rs",
+      "ccList": "rs"
+    },
+    "de.bmw.infotainment.checkcontrol.CheckControlMaster": {
+      "basicList": "rs"
+    }
+  },
+  "screens": [
+    {
+      "name": "MAIN",
+      "kind": "canvas",
+      "title": "iX Service",
+      "buttons": [
+        ["BTN_PAGE", "Next page"],
+        ["BTN_PREV", "Previous"],
+        ["BTN_NEXT", "Next"],
+        ["BTN_REFRESH", "Refresh"],
+        [
+          "BTN_SETTINGS",
+          "Settings"
+        ]
+      ]
+    }
+  ],
+  "settings": [
+    {
+      "key": "theme",
+      "label": "Colour theme",
+      "type": "choice",
+      "default": "ice",
+      "options": [
+        [
+          "m_red",
+          "M Red"
+        ],
+        [
+          "m_tricolour",
+          "M Tricolour"
+        ],
+        [
+          "ice",
+          "Ice White"
+        ],
+        [
+          "amber",
+          "Night Amber"
+        ]
+      ]
+    },
+    {
+      "key": "layout",
+      "label": "Screen layout",
+      "type": "choice",
+      "default": "full",
+      "options": [
+        [
+          "full",
+          "Full screen"
+        ],
+        [
+          "standard",
+          "Standard"
+        ]
+      ]
+    },
+    {
+      "key": "renderer",
+      "label": "Renderer",
+      "type": "choice",
+      "default": "auto",
+      "options": [
+        [
+          "auto",
+          "GPU 60 fps (default)"
+        ],
+        [
+          "software",
+          "Software"
+        ]
+      ]
+    },
+    {
+      "key": "demo",
+      "label": "Demo data",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Never"
+        ],
+        [
+          "on",
+          "Always"
+        ]
+      ]
+    }
+  ]
+}
