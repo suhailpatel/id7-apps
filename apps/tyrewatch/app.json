@@ -2,7 +2,7 @@
   "id": "tyrewatch",
   "title": "TyreWatch",
   "description": "Four-wheel pressure, temperature, vehicle targets and cool-reading history for iDrive 7. G08 telemetry requires validation.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "vendor": "custom",
   "loggingId": "OOJY",
   "iconGlyph": "TW",

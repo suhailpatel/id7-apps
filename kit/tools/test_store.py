@@ -43,7 +43,7 @@ def main():
         run(sys.executable, 'kit/tools/build_store.py', cwd=root)
         out = root / 'dist/store'
         catalog = json.loads((out / 'catalog.json').read_text())
-        assert catalog['schema'] == 2 and len(catalog['components']) == 4
+        assert catalog['schema'] == 2 and len(catalog['components']) == len(store.APPS)
         uuids, logs, checked_js = set(), set(), set()
         for c in catalog['components']:
             app_id = c['id']
@@ -82,6 +82,9 @@ def main():
                 assert next(s for s in spec['settings'] if s['key'] == 'distUnit')['default'] == 'mi'
             if source == 'ixdrive':
                 assert 'rhmiDataStartWidget/application.json' in data
+            if source == 'ixcharge':
+                assert 'suhailpatel_ixdrive' not in pkg['requires']
+                assert spec['config']['legacySource'] == 'suhailpatel_ixdrive'
             if source == 'tripcapsule':
                 assert pkg['requires']['suhailpatel_ixdrive'] == store.read(ROOT / 'apps/ixdrive/app.json')['version']
                 assert spec['config']['journeySource'] == 'suhailpatel_ixdrive'

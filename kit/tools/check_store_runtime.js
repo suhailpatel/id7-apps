@@ -44,7 +44,7 @@ async function main(){
     for(const setting of ['off','on']){
         opts.demo=setting;changes.forEach(fn=>fn('demo'));
         // Exercise every page and its drawing helpers, not only module parsing.
-        const count=/ixdrive\d*$/.test(spec.id)?9:/ixobservatory\d*$/.test(spec.id)?3:2;
+        const count=/ixdrive\d*$/.test(spec.id)?6:/(ixobservatory|ixcharge)\d*$/.test(spec.id)?3:2;
         for(let i=0;i<count;i++){
             texts.length=0;
             if(ctx.tab)await ctx.tab(i);
@@ -58,6 +58,9 @@ async function main(){
         assert(shared[name],'journey output uses installed ID');
         assert.strictEqual(JSON.parse(shared[name]).sourceId,spec.id);
         assert(!shared['/tmp/mgu-ixdrive-trips.json'],'Store edition leaves developer transport alone');
+        const legacy='/tmp/mgu-'+spec.id+'-legacy-charges.json';
+        assert.strictEqual(JSON.parse(shared[legacy]).sourceId,spec.id);
+        assert(!shared['/tmp/mgu-ixdrive-legacy-charges.json'],'migration also uses installed ID');
         timers.filter(t=>t.ms===5000).forEach(t=>t.fn());
         assert.strictEqual(JSON.parse(shared[name]).demo,true,'demo cannot publish real records');
     }
@@ -72,6 +75,22 @@ async function main(){
         packet.sourceId='ixdrive';shared['/tmp/mgu-'+sourceId+'-trips.json']=JSON.stringify(packet);
         timers.forEach(t=>t.fn());texts.length=0;await ctx.frame();
         assert(texts.indexOf('SAVED CARDS')>=0,'rejects other installation identities');
+    }
+    if(/ixcharge\d*$/.test(spec.id)){
+        opts.demo='off';changes.forEach(fn=>fn('demo'));
+        const sourceId=spec.config.legacySource,now=Date.now();
+        assert.strictEqual(sourceId,'suhailpatel_ixdrive');
+        const name='/tmp/mgu-'+sourceId+'-legacy-charges.json';
+        shared[name]=JSON.stringify({version:1,source:'ixdrive',sourceId,demo:false,t:now,
+            history:{log:[{from:20,to:80,fromT:now-3600000,toT:now,kwh:null}],charges:[]}});
+        for(const timer of timers)await timer.fn();
+        for(const timer of timers)await timer.fn();
+        const saved=JSON.parse(fs.readFileSync(path.join(dataDir,'charging.json'),'utf8'));
+        assert.strictEqual(saved.log.length,1,'Store history imports only once');
+        assert.strictEqual(saved.log[0].source,sourceId);
+        assert.strictEqual(saved.log[0].kwh,null);
+        texts.length=0;await ctx.tab(1);await ctx.frame();
+        assert(texts.indexOf('Includes imported iXDrive history')>=0);
     }
     // Exercise the real decoder whose modern Object API previously failed on Node 8.
     if(/ixobservatory\d*$/.test(spec.id)){

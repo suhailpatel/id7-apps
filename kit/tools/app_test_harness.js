@@ -11,9 +11,9 @@ const load=Module._load;
 Module._load=function(req,parent,isMain){
     if(req==='./kit/mgu')return {run:a=>{app=a;}};
     if(req.startsWith('./kit/'))return load.call(this,path.join(KIT,req.slice(6)),parent,isMain);
-    if(req==='fs' && parent && /apps[/\\](tyrewatch|tripcapsule)/.test(parent.filename))return Object.assign({},fs,{
-        statSync:p=>p==='/tmp/mgu-ixdrive-trips.json'?{size:env.shared?JSON.stringify(env.shared).length:0}:fs.statSync(p),
-        readFileSync:(p,...args)=>p==='/tmp/mgu-ixdrive-trips.json'?JSON.stringify(env.shared):fs.readFileSync(p,...args)
+    if(req==='fs' && parent && /apps[/\\](tyrewatch|tripcapsule|ixcharge)/.test(parent.filename))return Object.assign({},fs,{
+        statSync:p=>(p==='/tmp/mgu-ixdrive-trips.json'||p==='/tmp/mgu-ixdrive-legacy-charges.json')?{size:env.shared?JSON.stringify(env.shared).length:0}:fs.statSync(p),
+        readFileSync:(p,...args)=>(p==='/tmp/mgu-ixdrive-trips.json'||p==='/tmp/mgu-ixdrive-legacy-charges.json')?JSON.stringify(env.shared):fs.readFileSync(p,...args)
     });
     return load.call(this,req,parent,isMain);
 };

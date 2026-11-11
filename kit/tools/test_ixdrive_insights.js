@@ -1,6 +1,7 @@
 'use strict';
 const assert = require('assert');
 const { Insights, journeyStats } = require('../../apps/ixdrive/insights');
+const { ChargeHistory } = require('../../apps/ixcharge/history');
 const DAY=86400000, T=Date.UTC(2026,10,8);
 const checks=[];
 const test=(name,run)=>checks.push([name,run]);
@@ -31,7 +32,7 @@ test('parking closes once and restart cannot double-count or bridge gaps',()=>{
     near(restored.journey.km,60*2/3600);
 });
 test('charging excludes regen and compares continuous segments only',()=>{
-    const st={},h=new Insights(st,'a');
+    const st={},h=new ChargeHistory(st,'a');
     for(let s=0;s<=60;s+=2) h.observe(point(T+s*1000,-60,0,20+s/60));
     near(st.charge.kwh,1);near(st.charge.seconds,60);
     assert.strictEqual(st.charge.peak,60);assert(!st.journey);
@@ -44,7 +45,7 @@ test('charging excludes regen and compares continuous segments only',()=>{
     near(st.charges[0].kwh,1);
 });
 test('short pauses split curves without inventing energy; missing SOC stays null',()=>{
-    const st={},h=new Insights(st,'a');
+    const st={},h=new ChargeHistory(st,'a');
     for(let s=0;s<=40;s+=2) h.observe(point(T+s*1000,-30,0,null));
     const energy=st.charge.kwh,segment=st.charge.points[st.charge.points.length-1].segment;
     h.observe(point(T+42000,0,0,null));h.observe(point(T+44000,-30,0,null));
@@ -87,14 +88,15 @@ test('saved history stays bounded',()=>{
     }
     assert.strictEqual(st.journeys.length,200);assert.strictEqual(st.days.length,365);
     assert.strictEqual(st.capacities.length,365);
+    const chargeState={},ch=new ChargeHistory(chargeState,'a');
     for(let i=0;i<25;i++) {
         const t=T+(500+i)*DAY;
-        for(let s=0;s<=40;s+=2)h.observe(point(t+s*1000,-20,0,30));
-        h.closeCharge();
+        for(let s=0;s<=40;s+=2)ch.observe(point(t+s*1000,-20,0,30));
+        ch.closeCharge();
     }
-    assert.strictEqual(st.charges.length,20);
-    for(let i=0;i<600;i++)h.observe(point(T+600*DAY+i*30000,-20,0,30));
-    assert(st.charge.points.length<=240);
+    assert.strictEqual(chargeState.charges.length,20);
+    for(let i=0;i<600;i++)ch.observe(point(T+600*DAY+i*30000,-20,0,30));
+    assert(chargeState.charge.points.length<=240);
 });
 test('weekly averages use distance weighting',()=>{
     const s=journeyStats([{km:10,kwh:1,ambientSum:0,ambientN:0},{km:90,kwh:27,ambientSum:0,ambientN:0}]);

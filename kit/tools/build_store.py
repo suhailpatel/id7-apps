@@ -13,7 +13,8 @@ ROOT = Path(build.ROOT)
 PREFIX = 'suhailpatel_'
 # Only these reviewed apps are offered. New scaffolded apps remain private by default.
 APPS = {
-    'ixdrive': ('SIDX', 'EV range, energy, charging and journey dashboard. G08 telemetry awaits vehicle validation.'),
+    'ixdrive': ('SIDX', 'EV range, energy, battery and journey dashboard. G08 telemetry awaits vehicle validation.'),
+    'ixcharge': ('SIXC', 'Independent charging estimates, session history and power curves. G08 telemetry awaits vehicle validation.'),
     'tyrewatch': ('STYW', 'Tyre pressure, temperature and cool-reading history. G08 field mapping awaits vehicle validation.'),
     'tripcapsule': ('STCP', 'Saved journey cards, labels and favourites. Requires iXDrive running for new journeys.'),
     'ixobservatory': ('SIXO', 'Battery and thermal overview, temperature charts and cell voltages. G08 telemetry awaits vehicle validation.'),
@@ -39,6 +40,8 @@ def listings():
         directory = 'store/apps/' + app_id
         requires = {'mgu-render': '0.6.19', 'mgu-deploy': '0.6.9'}
         config = {}
+        if source == 'ixcharge':
+            config['legacySource'] = PREFIX + 'ixdrive'
         if source == 'tripcapsule':
             requires[PREFIX + 'ixdrive'] = read(ROOT / 'apps/ixdrive/app.json')['version']
             config['journeySource'] = PREFIX + 'ixdrive'
@@ -121,7 +124,7 @@ def build_all(release_tag=None):
         titles[app_id] = {key: entry[key] for key in ('title', 'description', 'author', 'icon', 'iconSha256')}
     (out / 'catalog.json').write_bytes(encoded({'schema': 2, 'components': components}))
     (out / 'mgu-store.json').write_bytes(encoded({'apps': titles}))
-    print('Prepared four SDK-free packages, icons, catalog.json and mgu-store.json in dist/store/')
+    print('Prepared %d SDK-free packages, icons, catalog.json and mgu-store.json in dist/store/' % len(APPS))
 
 
 def main():

@@ -1,7 +1,7 @@
 {
   "id": "suhailpatel_tyrewatch",
   "sourceApp": "tyrewatch",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "title": "TyreWatch",
   "description": "Tyre pressure, temperature and cool-reading history. G08 field mapping awaits vehicle validation.",
   "vendor": "suhailpatel",

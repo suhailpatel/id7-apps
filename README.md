@@ -13,12 +13,17 @@ A read-only EV dashboard with:
 - Range, charge level, live power and regeneration.
 - Learned battery capacity, trip efficiency and energy use.
 - Battery temperatures, cell readings and capacity history.
-- Charging estimates, session history and comparisons.
 - Journey logs, weekly consumption and estimated costs.
 - A home-screen widget and diagnostic pages.
 
 Vehicle readings still need validation on the G08 iX3. Missing readings are
 shown as unavailable. See [iXDrive's README](apps/ixdrive/README.md) for details.
+
+## iXCharge
+
+Independent charging estimates, session history and power-curve comparisons,
+with its own settings, storage and read-only collection. Charging has moved out
+of iXDrive. [App guide](apps/ixcharge/README.md).
 
 ## TyreWatch
 
@@ -76,7 +81,7 @@ npm test
 npm run build:store
 ```
 
-The four Store editions use `suhailpatel_` IDs and declare iDrive 7 support.
+The five Store editions use `suhailpatel_` IDs and declare iDrive 7 support.
 SDK-free packages, icons and a catalog are written to `dist/store/`. MGU Store
 supplies the SDK from the owner's head unit. Trip Capsule requires the Store
 edition of iXDrive. See the [publishing guide](docs/PUBLISHING.md) for branch,
@@ -95,6 +100,21 @@ builds cannot be installed on a car. Deployment helpers are in `deploy/`.
 
 The [`.gitignore`](.gitignore) excludes the SDK, packages, credentials, vehicle
 captures and other local files.
+
+### Copy head-unit reference files
+
+With existing SSH access, collect signal definitions, UI resources and version
+files into a new private, Git-ignored folder under `reference/`:
+
+```sh
+python3 kit/tools/copy_headunit_reference.py root@HEAD_UNIT_IP -i /path/to/identity_key
+```
+
+The script only reads files on the head unit. Add `--dry-run` to inspect its
+commands without connecting, `-p PORT` for a custom SSH port, or
+`--include-packages` to also copy the original preinstalled BMW app packages.
+Use `--output /path/to/folder` to save dated captures outside `reference/`.
+See [reference collection details](docs/TELEMETRY_AUDIT.md#automated-read-only-collection).
 
 ## Repository
 

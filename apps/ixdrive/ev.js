@@ -22,17 +22,6 @@ function createActivity(clock) {
     };
 }
 
-// Battery-side estimate, not an AC/DC charger measurement or a charging command.
-// Charging taper makes this a constant-power estimate, not a promised finish time.
-function chargeEstimate(soc, target, kwhPerPct, kw, speed) {
-    if (!number(soc) || soc < 0 || soc > 100 || !number(target) || target < 0 || target > 100
-        || !number(kwhPerPct) || !(kwhPerPct > 0)) return null;
-    const remaining = Math.max(0, target - soc) * kwhPerPct;
-    const charging = number(kw) && kw < -0.3 && number(speed) && speed <= 1;
-    return { remaining, reached: soc >= target, charging, power: charging ? -kw : null,
-        minutes: charging && remaining > 0 ? remaining / -kw * 60 : null };
-}
-
 // A display scale follows reported battery limits, or observed power when limits
 // are unavailable. An observed peak is not advertised as the car's rated power.
 function powerScale(limits, kw, peakOut, peakIn) {
@@ -81,4 +70,4 @@ class CapacityLearner {
     }
 }
 
-module.exports = { normalizeSoc, createActivity, chargeEstimate, powerScale, CapacityLearner };
+module.exports = { normalizeSoc, createActivity, powerScale, CapacityLearner };

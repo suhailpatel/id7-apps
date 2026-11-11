@@ -1,0 +1,20 @@
+{
+  "id": "suhailpatel_ixcharge",
+  "sourceApp": "ixcharge",
+  "version": "0.1.1",
+  "title": "iXCharge",
+  "description": "Independent charging estimates, session history and power curves. G08 telemetry awaits vehicle validation.",
+  "vendor": "suhailpatel",
+  "author": "suhailpatel",
+  "loggingId": "SIXC",
+  "mguHmi": [
+    "ID7"
+  ],
+  "requires": {
+    "mgu-render": "0.6.19",
+    "mgu-deploy": "0.6.9"
+  },
+  "config": {
+    "legacySource": "suhailpatel_ixdrive"
+  }
+}

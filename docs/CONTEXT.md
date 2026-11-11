@@ -26,7 +26,7 @@ Source revision: `8048eb091a20c5e2bfe36cda96e938472d2dfdc5`.
 
 ## Implemented state
 
-App identity: `ixdrive`, version `0.1.1`, logging ID `OAXD`; separate settings,
+App identity: `ixdrive`, version `0.1.3`, logging ID `OAXD`; separate settings,
 history and home-screen widget. The icon is a white SUV with a cyan lightning bolt
 on black, 140 × 140 PNG, with generation prompt in `apps/ixdrive/icon-prompt.txt`.
 
@@ -34,37 +34,35 @@ Pages:
 
 1. Range dashboard: estimated range to reserve, SOC, energy, pack temperature and
    voltage, live power, recent/trip efficiency, recorded trip distance/time, net
-   energy, regeneration, peak draw, 12 V voltage and last charge.
+   energy, regeneration, peak draw, 12 V voltage.
 2. Energy: power flow and consumption details.
 3. Battery: capacity, health when available, cells and temperatures.
-4. Charging: read-only target/energy/time estimates at current battery power.
-5. Charge Log: inferred sessions, including SOC changes across sleep.
-6. Journeys: persisted observed trips, outside temperature, weekly comparisons,
+4. Journeys: persisted observed trips, outside temperature, weekly comparisons,
    estimated costs, browsing older records.
-7. Charge Lab: observed power-versus-SOC curves, session comparison, pack
-   temperature, energy, peak power and recorded duration.
-8. Trends: learned/reported usable-capacity observations and daily cell spread /
+5. Trends: learned/reported usable-capacity observations and daily cell spread /
    temperature history, with separate series after diagnostic calibration changes.
-9. Optional Diagnostics: raw readings, battery unit, scan and signals.
+6. Optional Diagnostics: raw readings, battery unit, scan and signals.
+
+Charging, Charge Log and Charge Lab moved to standalone iXCharge on 11 November.
 
 No engine-RPM dependency, hybrid reserve or automatic fallback to a 12 V vehicle
-mode. Defaults: demo off, arrival reserve 0%, local charge-estimate target 80%.
-The target calculates an estimate; it does not control the car's charging limit.
+mode. Defaults: demo off, arrival reserve 0%. iXCharge has its own 80% estimate target;
+that target does not control the car.
 
 ## Important implementation details
 
-- `main.js`: app integration, SOC learning, charge log, canvas pages and persistence
+- `main.js`: app integration, SOC learning, driving canvas pages and persistence
   in `battery.json`. Shared telemetry is `/tmp/mgu-ixdrive.json` on the head unit.
 - `live.js`: live pack power/cells, matched energy and distance, widget, telemetry
   callbacks and `live.json` state. Fresh speed distinguishes regen from charging.
 - `range.js`: observed SOC-per-distance range, with richer climate/speed learning
   once usable capacity is known. No nominal battery-size/range fallback.
-- `ev.js`: SOC normalization, awake gating, charging estimate, dynamic power scale,
+- `ev.js`: SOC normalization, awake gating, dynamic power scale,
   usable-capacity learner. Two independent drops of at least five SOC percentage
   points must agree within 15%; accepted capacity estimates expire after 30 days.
 - `insights.js`: bounded persisted history, restart/gap handling and demo fixtures.
-  Retains 200 journeys, 20 charging sessions with up to 240 curve points each,
-  365 capacity points and 365 daily battery observations. No GPS route collection.
+  Retains 200 journeys, 365 capacity points and 365 daily battery observations.
+  No GPS route collection.
 - Driving history represents observed telemetry, not odometer distance. Gaps and
   restarts are marked partial. Charging curves never fill sleeping periods.
 - Demo fixtures never train or persist real histories. Unknown values are not zero.
@@ -84,8 +82,8 @@ plausibility does not establish correct G08 decoding. Capacity and SOH candidate
 lists are deliberately empty. Direct factory capacity detection is not verified;
 current usable capacity is learned if valid SOC/power data are available.
 
-The BMW `oap-sdk` is absent. Preview builds work without it. Private builds
-require the owner's locally extracted SDK; Store builds now produce SDK-free
+A local extracted BMW `oap-sdk` version 24.10.2 is now present and ignored by Git.
+Preview builds work without it; private builds use that local SDK; Store builds now produce SDK-free
 `.tgz` packages for donor injection by MGU Store. No deployment has
 been performed. No supported signal profile for newer iDrive platforms is promised.
 
@@ -97,16 +95,16 @@ been performed. No supported signal profile for newer iDrive platforms is promis
 3. Verify a direct usable-capacity/SOH decoder before enabling those candidate lists.
 4. Test learned capacity, trip/session boundaries, parked sleep and history over
    real journeys and charging sessions. Revisit thresholds using captured evidence.
-5. Add the SDK locally when available, build an installable package, and treat
-   installation as a separate requested action.
+5. Obtain the matching head-unit SOME/IP catalogue and G08 diagnostic evidence.
+   Treat any build installation as a separate requested action.
 
 ## Ideas discussed, not requested for implementation
 
 Smooth Drive, Road Trip/navigation, Cabin Energy, configurable
 Dashboard, Energy Weather, What If scenarios, Drive Fingerprint, Charge Garden,
 Valet Snapshot, Journey Postcards, Cabin Scenes, Personal Bests and Car Time Capsule.
-Journey Journal, Charging Lab and Battery Trends were integrated into iXDrive. Do not
-interpret brainstorming as authorization to implement all of these ideas.
+Journey Journal and Battery Trends remain in iXDrive; Charging Lab is now in
+iXCharge. Do not interpret brainstorming as authorization to implement all of these ideas.
 
 ## Continuing work
 
@@ -175,8 +173,8 @@ view with battery, motor and coolant temperatures and changes over time.
 
 ## MGU Store preparation — 11 November 2026
 
-All four apps and their Store editions are version `0.1.1`. Trip Capsule requires
-iXDrive `0.1.1` or newer.
+At Store preparation, all four apps and their Store editions were `0.1.1`, with
+Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
 
 - User requested publishing preparation against robertnisipeanu/mgu-store and
   explicitly chose the `suhailpatel_` prefix. All four apps have generated Store
@@ -199,3 +197,105 @@ iXDrive `0.1.1` or newer.
   dependencies and icons. No release, push or vehicle installation was performed.
 - All vehicle-validation limitations above still apply. Range Lab was cancelled
   before implementation and remains outside scope.
+
+
+## iXCharge separation — 11 November 2026
+
+- User requested extracting charging from iXDrive and explicitly chose independent
+  operation. Generated `apps/ixcharge` using `npm run new:app`; ID `ixcharge`,
+  logging ID `OAXC`, version `0.1.0`. Store ID `suhailpatel_ixcharge`, no iXDrive
+  dependency. iXDrive and Trip Capsule are now `0.1.2`; TyreWatch and Observatory
+  remain `0.1.1`. Trip Capsule's Store minimum iXDrive version is `0.1.2`.
+- Charging, Charge Log and Charge Lab moved to iXCharge, along with the local
+  estimate target. iXDrive retains Range, Energy, Battery, Journeys, Trends and
+  optional diagnostics; its last-charge card and new charge recording are removed.
+- Independent read-only battery diagnostics, own capacity learner and atomic
+  `charging.json` persistence. Candidate provenance, unknown values, no nominal
+  capacity, parked limits and explicit isolated demo are retained. No plug-state
+  or AC/DC detection is claimed. Additional polling occurs if both apps run.
+- Legacy iXDrive records remain stored there. Updated iXDrive publishes a bounded
+  migration-only snapshot to `/tmp/mgu-<installed-id>-legacy-charges.json`.
+  iXCharge imports matching fresh non-demo history once into its own bounded
+  storage, preserving source and separate calibration eras. Both apps need to run
+  together only for this import. Store and local installations remain separate.
+- Power curves use observed intervals only; sleep SOC rises can appear in the log
+  without curves. Unknown energy remains unavailable; costs assume 10% overhead.
+  iXCharge learns its own capacity while it runs during driving.
+- Tests cover independent collection, sleep/restart records, demo cancellation,
+  parked backoff, gaps/regen, capacity learning, history migration and all pages.
+  Full `npm test`, `store:check` and `build:store` passed. Demo, missing readings,
+  Fahrenheit and reduced iXDrive navigation previews were reviewed. Store packages
+  contain all five apps with matching versions and dependencies. Vehicle decoding remains unvalidated;
+  no installation or remote publication is requested.
+
+
+## SDK telemetry audit — 11 November 2026
+
+- User requested checking every app against the SDK. The local extraction has
+  126 source modules, identifies itself as 24.10.2, and remains excluded from Git.
+  Its native read/subscribe calling conventions match our runtime. TyreWatch's
+  named pressure/temperature units match all 20 tested SDK combinations.
+- This extraction does not include most vehicle signal schemas or SME diagnostic
+  definitions. The local SOME/IP catalogue is absent; the user confirmed they do
+  not have it and asked how to obtain it. No G08 telemetry mapping was promoted
+  from candidate to validated, and no car connection or installation was made.
+- The initial audit reproduced these iXDrive issues (fixed below): periodic SOME/IP getters bypass parked
+  and demo gates; fresh current can be combined with up to 60-second-old voltage;
+  ambient/climate and the broadcast battery-temperature fallback lack expiry.
+  Downstream journey/capacity figures can inherit those data-quality problems.
+- Full per-app/mapping findings and read-only catalogue-copy instructions are in
+  [the telemetry audit](TELEMETRY_AUDIT.md). `node kit/tools/audit_sdk.js` repeats
+  the isolated SDK and application checks without contacting the car.
+- This audit adds tooling/documentation only; app versions are unchanged.
+
+## Head-unit reference collection — 11 November 2026
+
+- Added `kit/tools/copy_headunit_reference.py` at the user's request, accepting an
+  SSH identity key, host/alias and optional port. It reads signal catalogues and
+  definitions, OAP UI resources/manifests/configuration and firmware identifiers
+  into unique Git-ignored `reference/headunit-*` snapshots with checksums.
+- `--output` selects another parent folder. The user requested
+  `/Users/Suhail/Development/Workspaces/2026-11-11-bmw-oap-sdk`; captures there use
+  dated subfolders and are outside this repository's Git-ignore coverage.
+- Stock packages, individual app logs and additional schema directories are
+  explicit options. Remote operations only list/read/stream files; no deployment,
+  vehicle diagnostics or remote temporary files. Existing SSH access is required.
+- The user requested no test additions. No actual head-unit collection or new
+  vehicle validation has been performed. No shipped app changes or version bumps.
+- The first user-run collection reported optional missing directories and failed
+  with `/bin/sh: Argument list too long`. The collector now streams the filename
+  list to `tar -T -` over SSH stdin instead of putting it in the remote command;
+  optional-path notices no longer obscure transfer errors. Awaiting a successful
+  head-unit retry; no tests run for this fix at the user's request.
+
+
+## iXDrive freshness fixes and headunit capture — 11 November 2026
+
+- Fixed parked/demo gating for initial, reconnect and periodic SOME/IP getters;
+  notifications can still resume collection on movement. Queued getters and late
+  replies recheck activity and demo generation, and overlapping getters are bounded.
+- Power now requires voltage/current within five seconds. Missing input breaks
+  energy, capacity-learning and journey continuity, including subsecond failures.
+- Auxiliary signals expire independently after 60 seconds; climate is computed
+  from fresh zone inputs. Slow diagnostic values expire at the existing stale
+  deadline (`max(30 seconds, 4 × slowPoll)`) instead of remaining dimmed ten minutes.
+- Shared runtime packaging requires all app versions to advance: iXDrive and Trip
+  Capsule 0.1.3, iXCharge 0.1.1, TyreWatch and iX Observatory 0.1.2. Trip Capsule's
+  generated Store minimum follows iXDrive 0.1.3. App IDs/storage are unchanged.
+- User supplied capture `headunit-20261111T121453Z-i85jrqjx` outside the repository.
+  Its catalogue contains 689 interfaces. All five apps' declared fields, methods,
+  read/subscribe permissions match. Telemetry instance 1 and diagnostic instance
+  SystemFunctionsInternalTasuInst1 (128) are present. Wrapper members,
+  sentinel defaults and TyreWatch's numeric unit enums also match the catalogue.
+- Captured preinstalled x_call 4.25.3 contains SDK 24.10.2 and BMW converters that
+  agree with our speed and ambient scaling. Installed x_call 4.84.32 metadata names
+  SDK ^27.40.4, but its JavaScript bundle was not captured; the older preinstalled
+  bundle cannot establish behavior of the updated installed version.
+- Catalogue membership is not proof of live availability or physical scaling.
+  No G08 diagnostic dictionary or measurement logs were found. Battery DIDs remain
+  candidates. See TELEMETRY_AUDIT.md for evidence and the remaining useful captures.
+- Verification passed: full `npm test`, refreshed Store listing checks, all five
+  package smoke tests and `build:store`. Demo and unavailable Battery screens were
+  rendered and visually reviewed. The capture-aware SDK audit checks 25 signal
+  declarations and reproduces no parked reads or stale-voltage integration.
+  Nothing was installed on the car or published.

@@ -69,7 +69,7 @@ class FakeReader extends RealReader {
     }
 }
 const tripFiles = new Map();
-const tripPath = p => typeof p === 'string' && p.startsWith('/tmp/mgu-ixdrive-trips.json');
+const tripPath = p => typeof p === 'string' && /^\/tmp\/mgu-ixdrive-(trips|legacy-charges)\.json/.test(p);
 const stubs = {
     fs: Object.assign({}, fs, {
         writeFileSync(p, data, ...args) { if (tripPath(p)) tripFiles.set(p, String(data)); else fs.writeFileSync(p, data, ...args); },
@@ -87,6 +87,7 @@ Module._load = function (req, parent, isMain) {
     return load.call(this, req, parent, isMain);
 };
 
+const { chargeEstimate } = require('../../apps/ixcharge/ev');
 const dirs = [];
 const tmp = (name) => { const d = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'ixdrive-' + name + '-')); dirs.push(d); return d; };
 const quiet = { info() {}, warn() {}, error() {} };
@@ -95,12 +96,12 @@ function context(dir, set) {
     SPEC.settings.forEach((s) => { defaults[s.key] = s.default; });
     const changes = [];
     const S = Object.assign(defaults, { demo: 'off' }, set || {});
-    const clicks = {}, texts = [], watchers = {};
+    const clicks = {}, texts = [], watchers = {}, watches = [];
     return {
-        clicks, texts, watchers, ui: { onClick: (id, fn) => { clicks[id] = fn; }, text() {}, image: async () => {} },
+        clicks, texts, watchers, watches, ui: { onClick: (id, fn) => { clicks[id] = fn; }, text() {}, image: async () => {} },
         settings: { get: (k) => S[k], onChange(fn) { changes.push(fn); }, set(k, v) { S[k] = v; changes.forEach(fn => fn(k)); } },
         log: quiet, spec: SPEC, dataDir: dir,
-        signals: { watch: (iface, ver, handlers) => { Object.assign(watchers, handlers); return Promise.resolve({}); } },
+        signals: { watch: (iface, ver, handlers, log, opts) => { watches.push(opts); Object.assign(watchers, handlers); return Promise.resolve({}); } },
         onTab() {}, hideButton() {}, onScroll() {}, loop(name, fps, fn) { this.frame = fn; },
         theme: () => themes.theme('m_tricolour'), canvas: (w, h) => {
             const cv = new Canvas(w, h), text = cv.text.bind(cv);
@@ -128,7 +129,7 @@ async function boot(dir, vals, set) {
     onExit.forEach((f) => process.removeListener('exit', f));
     await flush();
     return {
-        texts: ctx.texts, reader, set: (k,v) => ctx.settings.set(k,v),
+        watches: ctx.watches, texts: ctx.texts, reader, set: (k,v) => ctx.settings.set(k,v),
         page: async () => { await ctx.clicks.BTN_PAGE(); await flush(); },
         read: async () => { diag.available = true; diag.emit('available', true); await flush(); },
         readNow: async () => { diag.available = true; ctx.clicks.BTN_READ(); await flush(); },
@@ -148,22 +149,24 @@ function startLive(dir, L, vals, config) {
     const reader = {
         raws, key: (p) => p.did,
         async read(p) {
-            const v = vals[p.did];
+            const v = typeof vals[p.did] === 'function' ? await vals[p.did]() : vals[p.did];
             if (v === undefined) return null;
-            raws[p.did] = { bytes: '62 ' + p.did.slice(0, 2) + ' ' + p.did.slice(2) + ' 00 00' };
-            return v;
+            raws[p.did] = { bytes: '62 ' + p.did.slice(0, 2) + ' ' + p.did.slice(2) + ' ' + (v.bytes || '00 00') };
+            return typeof v === 'object' ? v.value : v;
         },
     };
     const ctx = context(dir);
     ctx.spec = { config: Object.assign({ battery: { fast: { hvV: [{ did: 'DD68', fields: { v: {} } }], hvI: [{ did: 'DD69', fields: { a: {} } }] }, slow: {} } }, config || {}) };
     const exclusive = (fn) => fn();
-    return require(LIVE)(ctx, { diag: { available: true, on() {}, physical: async () => null }, reader, exclusive, live: L, page: () => 'main', climateKw: () => 0 });
+    const lv = require(LIVE)(ctx, { diag: { available: true, on() {}, physical: async () => null }, reader, exclusive, live: L, page: () => 'main', climateKw: () => 0 });
+    lv.set = (k, v) => ctx.settings.set(k, v);
+    return lv;
 }
 const power = () => fire((ms) => ms === 60 || ms === 2000);
 const liveState = (dir) => { try { return JSON.parse(fs.readFileSync(path.join(dir, 'live.json'), 'utf8')); } catch (e) { return {}; } };
-const L0 = () => ({ speed: 0, speedT: now, climate: false, seats: {}, wheel: false, standSince: now - 60000, blower: 0, blowerTop: 8, ambient: 10 });
+const L0 = () => ({ speed: 0, speedT: now, climate: false, seats: {}, wheel: false, standSince: now - 60000, blower: 0, blowerTop: 8, ambient: 10, ambientT: now });
 
-const { normalizeSoc, createActivity, chargeEstimate, CapacityLearner, powerScale } = require('../../apps/ixdrive/ev');
+const { normalizeSoc, createActivity, CapacityLearner, powerScale } = require('../../apps/ixdrive/ev');
 const { RangeModel } = require('../../apps/ixdrive/range');
 const checks = [
     ['independent BEV identity and defaults', async () => {
@@ -215,7 +218,7 @@ const checks = [
         const noBattery = await boot(tmp('absent'), {});
         for (let i = 0; i < 8; i++) { now += 20000; await noBattery.read(); }
         const text = await noBattery.draw();
-        assert(text.includes('RANGE') && text.includes('CHARGING'));
+        assert(text.includes('RANGE') && text.includes('JOURNEYS'));
         assert(!text.some(s => /ALTERNATOR|HYBRID|DEMO/.test(s)));
     }],
     ['efficient EV consumption is valid across battery sizes', async () => {
@@ -227,21 +230,17 @@ const checks = [
         }
         assert.strictEqual(new RangeModel({learn:{km:60,pct:0.1}}).drivePctPerKm(60), null);
     }],
-    ['charge logged once across sleep; unknown energy stays unavailable', async () => {
-        const dir = tmp('charge');
-        let b = await boot(dir, {soc:20}); await b.read(); b.exit();
-        now += 8*3600000;
-        b = await boot(dir, {soc:80}); await b.read(); b.exit();
-        now += 30000;
-        b = await boot(dir, {soc:80}); b.drive(30); await b.read(); b.exit();
-        const log = state(dir).log;
-        assert.strictEqual(log.length,1);
-        assert.strictEqual(log[0].kwh, null);
-        await b.page(); await b.page(); await b.page(); await b.page();
-        assert((await b.draw()).includes('--'));
-        now += 30000;
-        b = await boot(dir, {soc:79.8}); b.drive(30); await b.read();
-        assert.strictEqual(state(dir).log.length,1);
+    ['charging UI and recording move out; legacy history stays available for import', async () => {
+        const dir=tmp('legacy'),legacy={from:20,to:80,fromT:now-3600000,toT:now,kwh:null};
+        fs.writeFileSync(path.join(dir,'battery.json'),JSON.stringify({log:[legacy]}));
+        const b=await boot(dir,{soc:20});await b.read();now+=8*3600000;
+        values.soc=80;b.drive(0);await b.read();b.exit();
+        assert.deepStrictEqual(state(dir).log,[legacy]);assert(!state(dir).insights.charge);
+        const packet=()=>JSON.parse(tripFiles.get('/tmp/mgu-ixdrive-legacy-charges.json'));
+        assert.deepStrictEqual(packet().history.log,[legacy]);assert.strictEqual(packet().sourceId,'ixdrive');
+        assert(!SPEC.settings.some(s=>s.key==='chargeTarget'));
+        for(let i=0;i<5;i++){const text=await b.draw();assert(!text.includes('Charging')&&!text.includes('Charge lab')&&!text.includes('LAST CHARGE'));await b.page();}
+        b.set('demo','on');assert(packet().demo);assert(!packet().history);
     }],
     ['regen while moving is not a charging session', async () => {
         const dir = tmp('regen'), b = await boot(dir, {soc:50});
@@ -353,16 +352,76 @@ const checks = [
         assert(lv.energySample().epoch>gap.epoch);
         assert.strictEqual(lv.energySample().kwh,0);
     }],
+    ['all SOME/IP getters use the parked/demo gate; motion can resume them', async () => {
+        const b = await boot(tmp('signal-gates'), {});
+        assert(b.watches.length >= 8);
+        assert(b.watches.every(o => o.shouldRead()));
+        now += 11 * 60000;
+        assert(b.watches.every(o => !o.shouldRead()));
+        b.drive(30); assert(b.watches.every(o => o.shouldRead()));
+        const epoch = b.watches[0].generation(); b.set('demo', 'on');
+        assert(b.watches.every(o => !o.shouldRead() && !o.shouldReceive()));
+        b.set('demo', 'off'); assert(b.watches[0].generation() > epoch);
+    }],
+    ['old or failed voltage cannot create power or bridge energy gaps', async () => {
+        const L = Object.assign(L0(), { speed: 50 }), vals = { DD68: 400, DD69: -50 };
+        const lv = startLive(tmp('old-voltage'), L, vals);
+        await power(); now += 2000; L.speedT = now; await power();
+        const before = lv.energySample(); assert(before.kwh > 0);
+        delete vals.DD68; now += 3000; L.speedT = now; await power();
+        assert(lv.energySample().epoch > before.epoch); assert.strictEqual(lv.energySample().kwh, 0);
+        assert.strictEqual(lv.draw('battery', new Canvas(1600, 520), themes.theme('ice')).kw, null);
+        L.lscV = 400; L.lscVT = now - 5000; await power(); assert.strictEqual(lv.draw('battery', new Canvas(1600, 520), themes.theme('ice')).kw, null);
+        L.lscVT = now + 1000; await power(); assert.strictEqual(lv.draw('battery', new Canvas(1600, 520), themes.theme('ice')).kw, null);
+        L.lscVT = now; await power(); assert.strictEqual(lv.draw('battery', new Canvas(1600, 520), themes.theme('ice')).kw, 20);
+        vals.DD68 = 400; now += 1000; L.speedT = now; await power();
+        assert(lv.energySample().kwh > 0);
+        delete vals.DD69; now += 1000; L.speedT = now; await power();
+        assert.strictEqual(lv.draw('battery', new Canvas(1600, 520), themes.theme('ice')).kw, null); assert.strictEqual(lv.energySample().kwh, 0);
+        vals.DD69 = -50; now += 1000; L.speedT = now; await power();
+        assert.strictEqual(lv.energySample().kwh, 0, 'recovery cannot integrate across the missing sample');
+    }],
+    ['in-flight diagnostic replies cannot cross demo transitions', async () => {
+        const L = Object.assign(L0(), { speed: 50 }); let reply;
+        const vals = { DD68: () => new Promise(resolve => { reply = resolve; }), DD69: -50 };
+        const lv = startLive(tmp('late-power'), L, vals);
+        await power(); assert(reply); lv.set('demo', 'on'); lv.set('demo', 'off');
+        reply(400); await flush(); assert.strictEqual(lv.draw('battery', new Canvas(1600, 520), themes.theme('ice')).kw, null); assert.strictEqual(lv.energySample().t, 0);
+        vals.DD68 = 400; await power(); assert.strictEqual(lv.draw('battery', new Canvas(1600, 520), themes.theme('ice')).kw, 20);
+    }],
+    ['temperatures expire independently in live pages and history inputs', async () => {
+        const { track } = require('../../apps/ixdrive/freshness');
+        const L = L0(); track(L, ['ambient', 'batt']); L.ambient = 10; L.batt = { avg: 25 };
+        const lv = startLive(tmp('temperatures'), L, {});
+        const snapshot = () => lv.draw('battery', new Canvas(1600, 520), themes.theme('ice'));
+        assert.strictEqual(snapshot().ambient, 10); assert.strictEqual(snapshot().carT.avg, 25);
+        now += 59000; L.batt = { avg: 26 }; now += 1000;
+        assert.strictEqual(snapshot().ambient, null); assert.strictEqual(snapshot().carT.avg, 26);
+        now += 59000; assert.strictEqual(snapshot().carT, null);
+        L.ambient = 12; assert.strictEqual(snapshot().ambient, 12);
+        lv.set('demo', 'on'); lv.set('demo', 'off');
+    }],
+    ['diagnostic temperatures expire at the slow-read deadline', async () => {
+        const L = L0(), vals = { TEMP: { value: 24, bytes: '18 1a 19' } };
+        const lv = startLive(tmp('slow-expiry'), L, vals, { battery: { fast: {}, slow: {
+            cellT: [{ did: 'TEMP', fields: { min: {}, max: { at: 1 }, avg: { at: 2 } } }],
+        } } });
+        const snapshot = () => lv.draw('battery', new Canvas(1600, 520), themes.theme('ice'));
+        snapshot(); await fire(ms => ms === 5000);
+        assert.strictEqual(snapshot().cellT.avg, 25);
+        now += 29999; assert.strictEqual(snapshot().cellT.avg, 25);
+        now++; assert.strictEqual(snapshot().cellT, null); assert.strictEqual(lv.dashboard().batteryTemp, null);
+    }],
     ['reported capacity hook is optional and does not assume battery health', async () => {
         const cfg=SPEC.config.battery;
         cfg.capacity=[{did:'TEST',bytes:2,factor:.1}];
         try {
             const b=await boot(tmp('reported'),{soc:20,capacity:74});
-            await b.read(); await b.page(); await b.page(); await b.page();
+            await b.read(); await b.page(); await b.page();
             const texts=await b.draw();
-            assert(texts.includes('74.0 kWh'));
-            assert(texts.includes('Capacity source: reported'));
-            assert(texts.includes('~44.4 kWh'));
+            assert(texts.includes('74.0'));
+            assert(texts.includes('Capacity: reported'));
+            assert(texts.includes('~14.8 kWh'));
         } finally {cfg.capacity=[];}
     }],
     ['dashboard trip uses matched samples, excludes charging and resets', async () => {
@@ -400,41 +459,37 @@ const checks = [
         assert(text.includes('7.7'),'12.4 km converts to 7.7 mi');
         assert(text.includes('77 °F'));
     }],
-    ['live samples persist journey and charging histories for the new pages', async () => {
+    ['live samples persist journeys and charging closes a journey without recording a charge', async () => {
         const dir=tmp('insights-wire');
         replies={'7:DDB4':'9C 40','7:DD69':'FF FF EC 78'};
         try {
             const b=await boot(dir,{soc:60});await b.read();
             for(let i=0;i<40;i++){now+=2000;b.drive(60);await power();}
             b.exit();assert(state(dir).insights.journey.km>1);
-            for(let i=0;i<5;i++)await b.page();
+            for(let i=0;i<3;i++)await b.page();
             const journeyText=await b.draw();assert(journeyText.includes('LIVE'));
             replies['7:DD69']='00 00 17 70';
             for(let i=0;i<20;i++){now+=2000;b.drive(0);if(i===0)await b.read();await power();}
             b.exit();
             const h=state(dir).insights;
             assert.strictEqual(h.journeys.length,1);
-            assert(h.charge.kwh>0 && h.charge.points.length>0);
-            await b.page();const lab=await b.draw();
-            assert(lab.includes('LIVE SESSION'));assert(lab.includes('24 kW'));
+            assert(!h.charge && !h.charges);
         } finally {replies={};}
     }],
     ['history pages browse older records through the HMI action', async () => {
         const b=await boot(tmp('history-browse'),{},{demo:'on'});
-        for(let i=0;i<5;i++)await b.page();
+        for(let i=0;i<3;i++)await b.page();
         assert((await b.draw()).includes('1 - 7 / 12'));
         await b.readNow();assert((await b.draw()).includes('8 - 12 / 12'));
-        await b.page();assert((await b.draw()).includes('130 kW'));
-        await b.readNow();assert((await b.draw()).includes('145 kW'));
     }],
     ['demo insights never write synthetic history', async () => {
         const dir=tmp('demo-insights'),b=await boot(dir,{soc:60},{demo:'on'});
-        for(let i=0;i<9;i++){await b.draw();await b.page();}
+        for(let i=0;i<6;i++){await b.draw();await b.page();}
         b.exit();
         const file=path.join(dir,'battery.json');
         if(fs.existsSync(file)) {
             const h=state(dir).insights;
-            assert(!h.journeys.length && !h.charges.length && !h.capacities.length && !h.days.length);
+            assert(!h.journeys.length && !h.charges && !h.capacities.length && !h.days.length);
         }
     }],
     ['Trip Capsule transport exports real history and explicitly rejects demo', async () => {
@@ -455,7 +510,7 @@ const checks = [
     ['every page renders with missing telemetry and demo data', async () => {
         for(const demo of ['off','on']) {
             const b=await boot(tmp('pages'),{},{demo,diagPage:true});
-            for(let i=0;i<9;i++){
+            for(let i=0;i<6;i++){
                 const texts=await b.draw();
                 assert(texts.length>0);
                 assert(!texts.some(s=>/NaN|Infinity|ENGINE|HYBRID|ALTERNATOR/.test(s)),texts.join(' | '));

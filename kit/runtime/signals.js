@@ -49,6 +49,9 @@ function loadConfig(iface) {
  * show up without waiting for the next change.
  * opts.pollMs: also re-read those fields that often while the provider is available - for
  * fields a car may not notify (BMW's x_call only ever reads TPMS, it never subscribes).
+ * opts.shouldRead gates all getters; shouldReceive gates notifications independently.
+ * opts.generation invalidates in-flight reads across mode changes. res.refresh()
+ * requests fresh values on interaction, subject to the same gate.
  */
 async function watch(iface, instance, handlers, log, opts) {
     const res = { iface, available: false, proxy: null, error: null, shutdown: () => Promise.resolve() };
@@ -57,25 +60,37 @@ async function watch(iface, instance, handlers, log, opts) {
         const cfg = loadConfig(iface);
         const p = await nativeTick(() => someip.buildProxy(cfg, String(instance)).then((px) => px.init().then(() => px)));
         res.proxy = p;
-        res.shutdown = () => Promise.resolve().then(() => p.shutdown && p.shutdown()).catch(() => {});
+        let stopped = false, pollTimer = null;
+        const pending = new Set();
+        const shouldRead = () => !stopped && res.available && (!opts || !opts.shouldRead || opts.shouldRead());
+        const shouldReceive = () => !stopped && (!opts || !opts.shouldReceive || opts.shouldReceive());
+        const generation = () => opts && opts.generation ? opts.generation() : 0;
+        res.shutdown = () => { stopped = true; if (pollTimer) clearInterval(pollTimer);
+            return Promise.resolve().then(() => p.shutdown && p.shutdown()).catch(() => {}); };
         const fields = Object.keys(handlers || {});
         const fetchAll = () => fields.forEach((f) => {
-            if (cfg.fields && cfg.fields[f] && cfg.fields[f].getter) {
-                p.getValue(f, 3000).then((v) => handlers[f](v)).catch(() => {});
+            if (shouldRead() && !pending.has(f) && cfg.fields && cfg.fields[f] && cfg.fields[f].getter) {
+                const epoch = generation(); pending.add(f);
+                Promise.resolve().then(() => {
+                    if (shouldRead() && generation() === epoch) return p.getValue(f, 3000).then(v => {
+                        if (shouldRead() && shouldReceive() && generation() === epoch) handlers[f](v);
+                    });
+                }).catch(() => {}).then(() => pending.delete(f));
             }
         });
+        res.refresh = fetchAll;
         await nativeTick(() => {
             try { return p.subscribeToAvailability((a) => { res.available = !!a; if (a) setImmediate(fetchAll); }); } catch (e) { return null; /* older binding */ }
         });
         for (const f of fields) {
             try {
-                await nativeTick(() => p.subscribe({ name: f, onReceive: (v) => { try { handlers[f](v); } catch (e) { if (log) log.warn(iface + '.' + f + ': ' + e); } } }));
+                await nativeTick(() => p.subscribe({ name: f, onReceive: (v) => { try { if (shouldReceive()) handlers[f](v); } catch (e) { if (log) log.warn(iface + '.' + f + ': ' + e); } } }));
             } catch (e) {
                 if (log) log.warn('subscribe ' + iface + '.' + f + ': ' + e);
             }
         }
         if (p.isAvailable && p.isAvailable()) { res.available = true; fetchAll(); }
-        if (opts && opts.pollMs) setInterval(() => { if (res.available) setImmediate(fetchAll); }, opts.pollMs);
+        if (opts && opts.pollMs) pollTimer = setInterval(() => { if (res.available) setImmediate(fetchAll); }, opts.pollMs);
     } catch (e) {
         res.error = String(e);
         if (log) log.warn('signals ' + iface + ': ' + e);

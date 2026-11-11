@@ -28,6 +28,7 @@
 const fs = require('fs');
 const { normalizeSoc, powerScale } = require('./ev');
 const path = require('path');
+const { recent, value: freshValue } = require('./freshness');
 const { ScaledCanvas, withAlpha } = require('./kit/canvas');
 const G = require('./kit/gauges');
 const { hex } = require('./kit/diag');
@@ -93,7 +94,7 @@ module.exports = function live(ctx, sh) {
     process.on('exit', () => { if (JSON.stringify(st) !== saved) save(); });
 
     /* ---------- this part's own values (the battery unit's); the car's are iXDrive's (L) ---------- */
-    const live = { v: null, vT: 0, a: null, kw: null, kwT: 0, soc: null, cellV: null, cellT: null, coolant: null, limits: null, slowT: {} };
+    const live = { v: null, vT: 0, a: null, aT: 0, kw: null, kwT: 0, soc: null, cellV: null, cellT: null, coolant: null, limits: null, slowT: {} };
 
     /* ---------- UDS: candidates with several fields on one reply ---------- */
     const pick = {};
@@ -139,11 +140,16 @@ module.exports = function live(ctx, sh) {
         return out;
     }
     /** A value's candidates, starting with the one that answered last. */
+    let telemetryGeneration = 0;
+    const canRead = epoch => !usingDemo() && diag.available && inUse() && epoch === telemetryGeneration;
     async function readGroup(name, list) {
+        const epoch = telemetryGeneration;
         list = list || [];
         const start = pick[name] || 0;
         for (let k = 0; k < list.length; k++) {
+            if (!canRead(epoch)) return null;
             const i = (start + k) % list.length, v = await readFields(list[i]);
+            if (!canRead(epoch)) return null;
             if (v) { pick[name] = i; return v; }
         }
         return null;
@@ -183,7 +189,7 @@ module.exports = function live(ctx, sh) {
      * standing in traffic included - over the last USE_KM km (st.use, kept across restarts) and the
      * last minute (useNow). This is what "range at this rate" on the Energy page divides by. */
     const USE_KM = 10, NOW_S = 60, useNow = [];
-    const KW_KEEP = 15000;           // a missed power read: the last value stays (dimmed) this long
+    const KW_KEEP = 5000;            // current and voltage must both remain fresh
     function onPower(kw, now) {
         const gap = now - live.kwT, speed = speedNow();
         const continuous = live.kwT && gap > 0 && gap <= 6000 && G.isNum(live.kw)
@@ -226,7 +232,7 @@ module.exports = function live(ctx, sh) {
             const d = data();
             sh.onSample({ t: now, kw, speed: speedNow(),
                 soc: L.socT && now - L.socT < 60000 ? L.soc : null,
-                temp: d.cellT && !d.stale.cellT ? d.cellT.avg : null, ambient: L.ambient });
+                temp: d.cellT && !d.stale.cellT ? d.cellT.avg : null, ambient: freshValue(L, 'ambient', now) });
         }
     }
     // how fast power is really read while shown (logged every 30 s): reads, time per read, time queued
@@ -240,37 +246,46 @@ module.exports = function live(ctx, sh) {
         }
         Object.assign(perf, { n: 0, ms: 0, wait: 0, maxWait: 0, t: now });
     }
+    function breakPower() {
+        live.kw = null; live.kwT = 0; live.a = null; live.aT = 0;
+        meter.epoch++; meter.kwh = 0; meter.t = 0;
+        if (!usingDemo() && sh.onSample) sh.onSample({ t: Date.now(), kw: null, speed: speedNow(), soc: null, temp: null, ambient: null });
+    }
     async function readPower() {
         // a car without the current identifier: only every 30 s. One that has answered keeps being asked
         // (no high-voltage battery: nothing to ask; the tries cost the 12 V reads seconds every 30 s)
         if (usingDemo() || !diag.available || !inUse() || (!iOk && iFail >= 3 && Date.now() - iTry < 30000)) return;
-        const queued = Date.now();
+        const queued = Date.now(), epoch = telemetryGeneration;
         await exclusive(async () => {
+            if (!canRead(epoch)) return;
             const w = Date.now() - queued;
             perf.wait += w; perf.maxWait = Math.max(perf.maxWait, w);
             try {
                 // the pack voltage moves little: every 5 s is enough, so the current gets nearly every read
-                if (!G.isNum(live.v) || Date.now() - live.vT > 5000) {
+                if (!G.isNum(live.v) || !recent(live.vT, Date.now(), 5000)) {
                     const r = await readGroup('hvV', cfg.fast.hvV);
+                    if (!canRead(epoch)) return;
                     if (r) { live.v = r[fieldsOf(cfg.fast.hvV[pick.hvV])[0]]; live.vT = Date.now(); }
                 }
                 iTry = Date.now();
                 const r = await readGroup('hvI', cfg.fast.hvI);
+                if (!canRead(epoch)) return;
                 rate.push([iTry, Date.now() - iTry]);
                 perf.n++; perf.ms += Date.now() - iTry; logPerf();
                 while (rate.length && iTry - rate[0][0] > 10000) rate.shift();
                 if (!r) {
-                    iFail++; pMiss++;
+                    breakPower(); iFail++; pMiss++;
                     const c = cfg.fast.hvI[pick.hvI || 0], raw = reader.raws[reader.key(primary(c))];
                     if (Date.now() - pLogT > 30000) { pLogT = Date.now(); log.warn('power (' + c.did + ') missed ' + pMiss + 'x: ' + (raw ? raw.why : 'not read') + (G.isNum(L.speed) ? ' at ' + Math.round(L.speed) + ' km/h' : '')); }
                     return;
                 }
                 iFail = 0; iOk = true;
                 const a = r[fieldsOf(cfg.fast.hvI[pick.hvI])[0]], now = Date.now();
-                live.a = a;
-                const volts = live.vT && now - live.vT < 60000 ? live.v : L.lscVT && now - L.lscVT < 60000 ? L.lscV : null;
+                live.a = a; live.aT = now;
+                const volts = recent(live.vT, now, 5000) ? live.v : recent(L.lscVT, now, 5000) ? L.lscV : null;
                 if (G.isNum(volts) && G.isNum(a)) onPower(volts * a / 1000 * (cfg.powerSign < 0 ? -1 : 1), now);
-            } catch (e) { log.warn('power: ' + e); }
+                else breakPower();
+            } catch (e) { if (canRead(epoch)) breakPower(); log.warn('power: ' + e); }
         }, true, 'power');
     }
     /** Power reads in the last 10 s: [time, ms it took]. */
@@ -288,23 +303,26 @@ module.exports = function live(ctx, sh) {
     /* ---------- slow reads (only while the screen is shown) ---------- */
     const SLOW = ['soc', 'cellV', 'cellT', 'coolant', 'limits'];
     const slowFail = {}, slowLogT = {}, slowMiss = {}, slowSkipUntil = {};
-    const SLOW_KEEP = 10 * 60000;      // a value that stops answering is kept (dimmed) this long, then blank
     // the pages with cells, temperatures and the climate unit's values (Battery, Battery unit, Scan): drawn this
     // recently. Elsewhere (Range, Energy: only the power) those reads wait, so the power reads get the link
     let pageDrawT = 0;
     const pageShown = () => Date.now() - pageDrawT < SHOWN_MS;
     async function readSlow() {
         if (usingDemo() || !diag.available || !shown()) return;
+        const epoch = telemetryGeneration;
         for (const name of SLOW) {
-            if (!inUse() || usingDemo()) break;
+            if (!canRead(epoch)) break;
             if (!(cfg.slow[name] || []).length || Date.now() < (slowSkipUntil[name] || 0)) continue;
             if (!pageShown() && name !== 'soc' && name !== 'limits') continue;
             // each try is its own turn on the link, so a power read can go between them
-            const one = () => exclusive(() => readGroup(name, cfg.slow[name]).catch((e) => { log.warn(name + ': ' + e); return null; }), false, name);
+            const one = () => exclusive(() => canRead(epoch) ? readGroup(name, cfg.slow[name]).catch((e) => { log.warn(name + ': ' + e); return null; }) : null, false, name);
             let r = await one();
+            if (!canRead(epoch)) return;
             // busy or no reply (the battery unit is asked something ~10 times a second): once more
             if (!r) { await new Promise((res) => setTimeout(res, 150)); r = await one(); }
+            if (!canRead(epoch)) return;
             if (!r) {
+                live[name] = null; live.slowT[name] = 0;
                 const c = cfg.slow[name][pick[name] || 0], raw = reader.raws[reader.key(primary(c))];
                 slowFail[name] = (slowFail[name] || 0) + 1;
                 if (Date.now() - (slowLogT[name] || 0) > 60000) {
@@ -336,12 +354,15 @@ module.exports = function live(ctx, sh) {
     try { samples = JSON.parse(fs.readFileSync(PROBE_FILE, 'utf8')) || []; } catch (e) { /* none yet */ }
     async function readProbes() {
         if (!PROBES.length) return;
+        const epoch = telemetryGeneration;
         for (const pr of PROBES) {
-            if (!inUse() || usingDemo()) break;
+            if (!canRead(epoch)) return;
             if (Date.now() < (probeSkipUntil[pr.name] || 0)) continue;
             await exclusive(async () => {
+                if (!canRead(epoch)) return;
                 try {
                     const v = await reader.read({ ecu: pr.ecu, did: pr.did, at: pr.at || 0, bytes: pr.bytes || 1, timeoutMs: 800, diagOpts: DIAG_OPTS });
+                    if (!canRead(epoch)) return;
                     if (v !== null) { probe[pr.name] = { raw: v, t: Date.now() }; probeMiss[pr.name] = 0; }
                     else if ((probeMiss[pr.name] = (probeMiss[pr.name] || 0) + 1) >= 3) {
                         // the climate unit asleep or busy: leave it alone for a minute rather than wait on it every round
@@ -351,6 +372,7 @@ module.exports = function live(ctx, sh) {
                 } catch (e) { /* not this time */ }
             }, false, 'climate ' + pr.name);
         }
+        if (!canRead(epoch)) return;
         const d = data(), cp = climatePower(d, Date.now());
         if (!d.demo && cp.how === 'measured' && PROBES.some((pr) => probe[pr.name] && Date.now() - probe[pr.name].t < 15000)) {
             const c = comfortKw(d);
@@ -374,7 +396,14 @@ module.exports = function live(ctx, sh) {
     }
     diag.on('available', (a) => { if (a) readSlow(); });
     scheduleSlow();
-    settings.onChange((k) => { if (k === 'slowPoll') scheduleSlow(); });
+    settings.onChange((k) => {
+        if (k === 'slowPoll') scheduleSlow();
+        if (k === 'demo') {
+            telemetryGeneration++; breakPower(); live.v = null; live.vT = 0;
+            SLOW.forEach(name => { live[name] = null; live.slowT[name] = 0; });
+            Object.keys(probe).forEach(name => delete probe[name]); lastMeasured = null;
+        }
+    });
 
     /* ---------- identifier scan (Scan page) ----------
      * Asks one control unit ("scanUnit": the battery unit, or the IHKA climate unit that runs the HV
@@ -499,7 +528,7 @@ module.exports = function live(ctx, sh) {
 
     /* ---------- climate: estimates and the measured standing draw ---------- */
     const comfortKw = (d) => {
-        const seats = Object.keys(d.seats || {}).reduce((a, k) => a + (d.seats[k] ? SEAT_KW[d.seats[k]] : 0), 0);
+        const seats = ['DR', 'PS', 'DRR', 'PSR'].filter(k => d.seats && k in d.seats).reduce((a, k) => a + (d.seats[k] ? SEAT_KW[d.seats[k]] : 0), 0);
         return { seats, wheel: d.wheel ? WHEEL_KW : 0 };
     };
     const blowerKw = (d) => {
@@ -570,17 +599,17 @@ module.exports = function live(ctx, sh) {
     const usingDemo = () => settings.get('demo') === 'on';
     function data() {
         if (usingDemo()) return Object.assign(demo.sample(), { demo: true }, sh.demoSoc ? { soc: sh.demoSoc() } : {});
-        const now = Date.now(), fresh = (t, s) => t && now - t < s * 1000;
-        const slowOk = (k) => live.slowT[k] && now - live.slowT[k] < SLOW_KEEP;
+        const now = Date.now(), fresh = (t, s) => recent(t, now, s * 1000);
         const staleAfter = Math.max(30, settings.get('slowPoll') * 4) * 1000;
-        const stale = {}; SLOW.forEach((k) => { stale[k] = !!live.slowT[k] && now - live.slowT[k] > staleAfter ? now - live.slowT[k] : 0; });
+        const slowOk = (k) => recent(live.slowT[k], now, staleAfter);
+        const stale = {}; SLOW.forEach((k) => { stale[k] = !!live.slowT[k] && now - live.slowT[k] >= staleAfter ? now - live.slowT[k] : 0; });
         return {
-            demo: false, kw: live.kwT && now - live.kwT < KW_KEEP ? live.kw : null, kwAge: live.kwT ? now - live.kwT : null, stale,
-            v: fresh(live.vT, 60) ? live.v : fresh(L.lscVT, 60) ? L.lscV : null, a: fresh(live.kwT, 10) ? live.a : null,
+            demo: false, kw: recent(live.kwT, now, KW_KEEP) ? live.kw : null, kwAge: live.kwT ? now - live.kwT : null, stale,
+            v: fresh(live.vT, 5) ? live.v : fresh(L.lscVT, 5) ? L.lscV : null, a: fresh(live.aT, 5) ? live.a : null,
             speed: speedNow(), soc: fresh(live.slowT.soc, 60) ? live.soc : null,
-            cellV: slowOk('cellV') ? live.cellV : null, cellT: slowOk('cellT') ? live.cellT : null, carT: L.batt,
+            cellV: slowOk('cellV') ? live.cellV : null, cellT: slowOk('cellT') ? live.cellT : null, carT: freshValue(L, 'batt', now),
             coolant: slowOk('coolant') ? live.coolant : null, limits: slowOk('limits') ? live.limits : null,
-            ambient: L.ambient, climate: L.climate, blower: L.blower, blowerTop: L.blowerTop,
+            ambient: freshValue(L, 'ambient', now), climate: L.climate, blower: L.blower, blowerTop: L.blowerTop,
             acKw: L.acKw, seats: L.seats, wheel: L.wheel,
         };
     }

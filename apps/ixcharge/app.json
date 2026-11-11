@@ -1,0 +1,319 @@
+{
+  "id": "ixcharge",
+  "title": "iXCharge",
+  "description": "Independent read-only charging estimates, session history and power curves for BMW iDrive 7. G08 diagnostic candidates await vehicle validation.",
+  "version": "0.1.1",
+  "vendor": "custom",
+  "loggingId": "OAXC",
+  "iconGlyph": "bolt",
+  "signals": {
+    "com.harman.infotainment.systemfunctions.tasu.tasu.InternalTasu": {
+      "_instances": "SystemFunctionsInternalTasuInst1",
+      "_methods": [
+        "sendTasuRequest"
+      ],
+      "_broadcasts": [
+        "sendTasuResponse"
+      ]
+    },
+    "de.bmw.infotainment.vehicle.Vehicle2": {
+      "statusCarSpeed2": "rs"
+    }
+  },
+  "screens": [
+    {
+      "name": "MAIN",
+      "kind": "canvas",
+      "title": "iXCharge",
+      "buttons": [
+        [
+          "BTN_READ",
+          "Read now"
+        ],
+        [
+          "BTN_PAGE",
+          "Next page"
+        ],
+        [
+          "BTN_PREV",
+          "Previous page"
+        ],
+        [
+          "BTN_SETTINGS",
+          "Settings"
+        ]
+      ]
+    }
+  ],
+  "settings": [
+    {
+      "key": "chargeTarget",
+      "label": "Charge estimate target (does not control car)",
+      "type": "number",
+      "unit": "%",
+      "default": 80,
+      "steps": [
+        50,
+        60,
+        70,
+        80,
+        90,
+        100
+      ]
+    },
+    {
+      "key": "price",
+      "label": "Electricity price",
+      "type": "number",
+      "unit": "EUR/kWh",
+      "default": 0.25,
+      "steps": [
+        0,
+        0.05,
+        0.1,
+        0.12,
+        0.15,
+        0.16,
+        0.17,
+        0.18,
+        0.19,
+        0.2,
+        0.21,
+        0.22,
+        0.23,
+        0.24,
+        0.25,
+        0.26,
+        0.27,
+        0.28,
+        0.29,
+        0.3,
+        0.31,
+        0.32,
+        0.33,
+        0.34,
+        0.35,
+        0.36,
+        0.37,
+        0.38,
+        0.39,
+        0.4,
+        0.45,
+        0.5,
+        0.55,
+        0.6,
+        0.7
+      ]
+    },
+    {
+      "key": "tempUnit",
+      "label": "Temperature unit",
+      "type": "choice",
+      "default": "c",
+      "options": [
+        [
+          "c",
+          "Celsius"
+        ],
+        [
+          "f",
+          "Fahrenheit"
+        ]
+      ]
+    },
+    {
+      "key": "theme",
+      "label": "Colour theme",
+      "type": "choice",
+      "default": "ice",
+      "options": [
+        [
+          "m_red",
+          "M Red"
+        ],
+        [
+          "m_tricolour",
+          "M Tricolour"
+        ],
+        [
+          "ice",
+          "Ice White"
+        ],
+        [
+          "amber",
+          "Night Amber"
+        ]
+      ]
+    },
+    {
+      "key": "layout",
+      "label": "Screen layout",
+      "type": "choice",
+      "default": "full",
+      "options": [
+        [
+          "full",
+          "Full screen"
+        ],
+        [
+          "standard",
+          "Standard"
+        ]
+      ]
+    },
+    {
+      "key": "renderer",
+      "label": "Renderer",
+      "type": "choice",
+      "default": "auto",
+      "options": [
+        [
+          "auto",
+          "GPU 60 fps (default)"
+        ],
+        [
+          "software",
+          "Software"
+        ]
+      ]
+    },
+    {
+      "key": "demo",
+      "label": "Demo data",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Never"
+        ],
+        [
+          "on",
+          "Always"
+        ]
+      ]
+    }
+  ],
+  "config": {
+    "comment": "Read-only candidates inherited from iXDrive/eDrive; not validated on the G08 iX3. No plug-state or AC/DC detection. No vehicle writes.",
+    "ecu": 7,
+    "powerSign": -1,
+    "legacySource": "ixdrive",
+    "chargeMinPct": 1,
+    "socWindow": {
+      "empty": 0,
+      "full": 100,
+      "comment": "Expected displayed SOC. If the verified DID reports physical SOC, set its measured empty/full limits; shared by the main page and live/widget reader."
+    },
+    "groups": {
+      "hvV": [
+        {
+          "did": "DDB4",
+          "timeoutMs": 600,
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          },
+          "note": "confirmed on the X5 45e"
+        },
+        {
+          "did": "DD68",
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          }
+        },
+        {
+          "did": "DD66",
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          }
+        },
+        {
+          "did": "DDEF",
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 1,
+              "min": 150,
+              "max": 500
+            }
+          }
+        }
+      ],
+      "hvI": [
+        {
+          "did": "DD69",
+          "timeoutMs": 600,
+          "fields": {
+            "a": {
+              "bytes": 4,
+              "factor": 0.01,
+              "signed": true,
+              "min": -2000,
+              "max": 2000
+            }
+          }
+        }
+      ],
+      "soc": [
+        {
+          "did": "DDBC",
+          "fields": {
+            "pct": {
+              "bytes": 2,
+              "factor": 0.1,
+              "min": 0,
+              "max": 100
+            }
+          }
+        }
+      ],
+      "cellT": [
+        {
+          "did": "DDC0",
+          "fields": {
+            "min": {
+              "at": 0,
+              "bytes": 2,
+              "factor": 0.01,
+              "signed": true,
+              "min": -40,
+              "max": 80
+            },
+            "max": {
+              "at": 2,
+              "bytes": 2,
+              "factor": 0.01,
+              "signed": true,
+              "min": -40,
+              "max": 80
+            },
+            "avg": {
+              "at": 4,
+              "bytes": 2,
+              "factor": 0.01,
+              "signed": true,
+              "min": -40,
+              "max": 80
+            }
+          }
+        }
+      ],
+      "capacity": []
+    }
+  }
+}

@@ -9,15 +9,14 @@ const mean = (sum, n) => n ? sum / n : null;
 class Insights {
     constructor(state, basis) {
         this.st = state;
-        for (const k of ['journeys', 'charges', 'capacities', 'days']) if (!Array.isArray(state[k])) state[k] = [];
+        for (const k of ['journeys', 'capacities', 'days']) if (!Array.isArray(state[k])) state[k] = [];
         this.prev = null;
         if (state.basis && state.basis !== basis) {
-            this.closeJourney(true); this.closeCharge(true);
+            this.closeJourney(true);
             state.era = (state.era || 0) + 1;
         }
         state.basis = basis;
         if (state.journey) state.journey.partial = true;
-        if (state.charge) state.charge.partial = true;
     }
     closeJourney(partial) {
         const j = this.st.journey;
@@ -26,21 +25,12 @@ class Insights {
         if (j.km >= 0.1) append(this.st.journeys, j, 200);
         this.st.journey = null;
     }
-    closeCharge(partial) {
-        const c = this.st.charge;
-        if (!c) return;
-        c.partial = c.partial || !!partial;
-        if (c.seconds >= 30) append(this.st.charges, c, 20);
-        this.st.charge = null;
-    }
     tick(t) {
         if (this.st.journey && t - this.st.journey.moveT >= PARK) this.closeJourney(t - this.st.journey.end > GAP);
-        if (this.st.charge && t - this.st.charge.end >= 120000) this.closeCharge(!this.prev || t - this.prev.t > GAP);
     }
     breakContinuity() {
         this.prev = null;
         if (this.st.journey) this.st.journey.partial = true;
-        if (this.st.charge) this.st.charge.partial = true;
     }
     observe(s) {
         if (!s || !num(s.t)) return;
@@ -57,22 +47,7 @@ class Insights {
         const energy = connected ? (p.kw + s.kw) / 2 * h : 0;
         if (charging) {
             this.closeJourney();
-            let c = this.st.charge;
-            if (!c) c = this.st.charge = { start: s.t, end: s.t, seconds: 0, kwh: 0, peak: -s.kw,
-                from: num(s.soc) ? s.soc : null, to: num(s.soc) ? s.soc : null,
-                points: [], partial: false, era: this.st.era || 0 };
-            if (connected && wasCharging) { c.kwh -= energy; c.seconds += dt / 1000; }
-            c.end = s.t; c.peak = Math.max(c.peak, -s.kw);
-            if (num(s.soc)) { if (c.from === null) c.from = s.soc; c.to = s.soc; }
-            if (!(connected && wasCharging)) c.segment = (c.segment || 0) + 1;
-            const last = c.points[c.points.length - 1];
-            if (!last || last.segment !== c.segment || s.t - last.t >= 30000 || (num(s.soc) && num(last.soc) && Math.abs(s.soc - last.soc) >= 1)) {
-                c.points.push({ t: s.t, soc: num(s.soc) ? s.soc : null, kw: -s.kw, temp: num(s.temp) ? s.temp : null,
-                    segment: c.segment || 0 });
-                if (c.points.length > 240) c.points = c.points.filter((_, i) => i % 2 === 0 || i === c.points.length - 1);
-            }
         } else {
-            if (this.st.charge && s.speed > 1) this.closeCharge();
             if (s.speed > 1 && !this.st.journey) this.st.journey = {
                 start: s.t, end: s.t, moveT: s.t, km: 0, kwh: 0, regen: 0, seconds: 0,
                 ambientSum: 0, ambientN: 0, partial: false, era: this.st.era || 0,
@@ -125,12 +100,8 @@ function demoInsights(now) {
     const journeys = Array.from({length:12}, (_,i) => ({ start:now-(12-i)*DAY/2, end:now-(12-i)*DAY/2+1800000,
         km:18+i*1.3, kwh:(18+i*1.3)*(.15+(i%4)*.018), regen:.8+i*.03, seconds:1800+i*40,
         ambientSum:(8+i)*1800000, ambientN:1800000, partial:i===3, era:0 }));
-    const charges = [0,1].map(n => ({ start:now-(2-n)*DAY, end:now-(2-n)*DAY+2400000, seconds:2400,
-        from:20,to:80,kwh:42.5-n,peak:145-n*15,partial:false,era:0,
-        points:Array.from({length:13},(_,i)=>({t:now-(2-n)*DAY+i*200000,soc:20+i*5,
-            kw:(145-n*15)*(1-i*.052),temp:22+i*.65,segment:0})) }));
     const capacities=Array.from({length:8},(_,i)=>({t:now-(7-i)*7*DAY,kwh:69.1-i*.12+(i%2)*.2,source:'learned',era:0,temp:18+i,soc:50}));
     const days=Array.from({length:14},(_,i)=>({day:Math.floor(now/DAY)-13+i,t:now-(13-i)*DAY,era:0,minTemp:12+i*.3,maxTemp:25+i*.2,spread:18+i%5,soc:60}));
-    return {journeys,charges,capacities,days,era:0};
+    return {journeys,capacities,days,era:0};
 }
 module.exports = { Insights, journeyStats, demoInsights };

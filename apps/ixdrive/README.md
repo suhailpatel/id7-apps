@@ -1,14 +1,14 @@
 # iXDrive
 
 A separate battery-electric fork of eDrive for **BMW iDrive 7**, focused on the
-**G08 iX3**. App ID `ixdrive`, title **iXDrive**, version **0.1.0**. eDrive is
+**G08 iX3**. App ID `ixdrive`, title **iXDrive**, version **0.1.3**. eDrive is
 unchanged. This is an initial implementation with synthetic tests, not yet
 vehicle-validated on a G08. Newer iDrive platforms are outside this release's scope.
 
 ## Features
 
-- Range, Energy, Battery, Charging and Charge log pages, plus optional diagnostics.
-- Journey Journal, Charging Lab and Battery Trends pages with persistent history.
+- Range, Energy, Battery, Journeys and Trends pages, plus optional diagnostics.
+- Journey Journal and Battery Trends with persistent history.
 - Dashboard cards for range to reserve, charge, pack temperature/voltage, recent
   and trip efficiency, recorded distance/time, net energy, regeneration and peak
   draw. Trip efficiency uses matched power and speed samples; gaps and charging
@@ -17,14 +17,10 @@ vehicle-validated on a G08. Newer iDrive platforms are outside this release's sc
   hybrid reserve. An optional arrival reserve is independent of the BMS buffer.
 - Live battery power, regeneration, cell voltages/temperatures, drive energy totals
   and a home-screen widget. Unsupported readings remain unavailable.
-- Read-only charging estimates: battery-side power, energy to a chosen target and
-  time at current power. The target does **not** change the car's charge limit.
-- Charge sessions inferred from stationary SOC increases or increases across
-  sleep/restart. Energy and cost are estimates, not charger meter readings.
 - Separate settings, history and learning in the app's own data directory.
   Telemetry is published to `/tmp/mgu-ixdrive.json`, separate from eDrive.
 
-## Journey, charging and battery history
+## Journey and battery history
 
 **Journey Journal** starts when fresh speed and power show movement. It records
 matched distance/energy, regeneration, observed duration and outside temperature.
@@ -33,12 +29,10 @@ or interrupted recordings are marked partial. The page lists trips and compares
 weighted consumption for the last seven days with the previous seven, with an
 estimated energy cost at the current tariff. No GPS routes are collected.
 
-**Charging Lab** records battery-side charging power against SOC, observed energy,
-peak power, duration and pack temperature. It compares the selected session with
-the preceding session. Grey is the older curve; green is the selected curve.
-Gaps, restarts and pauses split the curve. No curve or energy is reconstructed
-while asleep. An SOC rise across sleep may appear in the existing Charge Log
-without a matching Charging Lab curve. Negative power while moving is regen.
+Charging estimates, Charge Log and Charge Lab now live in the independent
+[iXCharge app](../ixcharge/README.md). iXDrive no longer records new charge sessions
+or shows a last-charge card. Run both updated apps once with demo off to import
+legacy charge records into iXCharge; the originals remain in iXDrive's storage.
 
 **Battery Trends** records daily capacity points separately for learned and
 reported capacity, plus daily temperature ranges and maximum cell-voltage spread
@@ -46,13 +40,11 @@ with its SOC. Cached capacity values do not produce new observations. These are
 observations under varying conditions, not a battery-health diagnosis. Changes
 to the diagnostic calibration start a new series; completed records remain saved.
 
-History retains up to 200 journeys, 20 charging recordings (240 curve points
-each), 365 capacity points and 365 daily battery observations in the app's own
-storage. Use the controller/touch scroll or Newer/Older buttons to browse journeys
-and charge recordings; the standard HMI has an Older action. Demo histories are
-synthetic and never saved. Recording uses existing telemetry and does not add
-polling or keep the parked car awake. Unsupported power readings cannot produce
-journey or charging recordings.
+History retains up to 200 journeys, 365 capacity points and 365 daily battery
+observations. Use controller/touch scroll or Newer/Older to browse journeys; the
+standard HMI has an Older action. Demo histories are synthetic and never saved.
+Recording uses existing telemetry without extra polling or keeping the car awake.
+Unsupported power readings cannot produce journey recordings.
 
 ## Automatic vehicle values
 
@@ -83,11 +75,10 @@ separates typical climate/comfort draw and speed effects. Climate assumptions
 remain estimates requiring calibration. Until enough data exists, range and
 energy-dependent figures remain blank. Charging power itself can still display.
 
-Unknown energy in past charge sessions stays unknown; totals are marked incomplete.
-Changing SOC or power decoding resets learning, retaining completed charge history.
+Changing SOC or power decoding resets learning, retaining completed history.
 
-Remaining settings are preferences: arrival reserve (0% initially), calculation
-target (80%), electricity price, units and appearance. Demo defaults to off and
+Remaining settings are preferences: arrival reserve (0% initially),
+electricity price, units and appearance. Demo defaults to off and
 must be enabled explicitly. Diagnostic controls are hidden by default.
 
 ## Diagnostic validation still needed
@@ -111,11 +102,7 @@ verified decoder returns physical SOC, configure its verified empty/full limits.
 Main, Battery and widget readings share the conversion. Do not subtract a second
 hidden buffer from displayed SOC.
 
-Fresh stationary speed and negative battery power are needed to identify active
-charging. Time estimates exclude charger losses and taper; the app does not read
-plug state, identify AC/DC or control charging. Charging can continue while the
-head unit sleeps, so a complete charging curve is not promised. Normal diagnostic
-reads pause when both movement has been absent for three minutes and interaction
+Normal diagnostic reads pause when both movement has been absent for three minutes and interaction
 for ten minutes. Explicit interaction or fresh movement resumes them.
 
 ## Development
@@ -136,14 +123,14 @@ node kit/tools/preview.js dist/ixdrive /tmp/ixdrive-preview BTN_PAGE BTN_PAGE BT
 
 The preview tool forces demo data. An offline preview is not an installable
 package. With the BMW `oap-sdk` present, `python3 kit/tools/build.py ixdrive`
-produces `dist/ixdrive@0.1.0.tgz`. The launcher uses `icon.png`: a white
+produces `dist/ixdrive@0.1.3.tgz`. The launcher uses `icon.png`: a white
 electric SUV with a cyan lightning bolt, rendered at 140 × 140 pixels.
 The artwork was created with built-in image generation; its final prompt is
 recorded in `icon-prompt.txt`. The build copies the icon directly.
 
 Synthetic tests cover independent identity, low SOC, arrival reserve, missing
-signals, range and capacity learning, power scaling, energy integration, charge
-history across sleep, regen, stale readings, parked polling and page rendering.
+signals, range and capacity learning, power scaling, energy integration,
+legacy-history export, regen, stale readings, parked polling and page rendering.
 
 ## Trip Capsule integration
 
@@ -160,3 +147,11 @@ by other local apps, contains no GPS route, and is written atomically.
 app. Its shared telemetry files use the installed ID, including
 `/tmp/mgu-suhailpatel_ixdrive-trips.json` for the Store edition of Trip Capsule.
 See [publishing](../../docs/PUBLISHING.md) for SDK-free builds.
+
+
+Live freshness: all SOME/IP getters follow the existing three-minute movement /
+ten-minute interaction limits, including startup and reconnect. Demo suppresses
+reads and incoming telemetry. Power requires voltage and current less than five
+seconds apart; dropouts break energy and journey continuity. Ambient and broadcast
+battery temperatures expire after 60 seconds. Diagnostic temperatures expire after
+`max(30 seconds, 4 × slowPoll)` and become unavailable on failed reads.
