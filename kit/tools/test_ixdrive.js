@@ -131,13 +131,19 @@ async function boot(dir, vals, set) {
     return {
         watches: ctx.watches, texts: ctx.texts, reader, set: (k,v) => ctx.settings.set(k,v),
         page: async () => { await ctx.clicks.BTN_PAGE(); await flush(); },
-        read: async () => { diag.available = true; diag.emit('available', true); await flush(); },
-        readNow: async () => { diag.available = true; ctx.clicks.BTN_READ(); await flush(); },
+        // SOC arrives from the car's own feed (0.5 % per bit, 255 = no value), the rest over the diagnostic link
+        read: async () => { feedSoc(ctx); diag.available = true; diag.emit('available', true); await flush(); },
+        readNow: async () => { diag.available = true; ctx.clicks.BTN_READ(); await flush(); feedSoc(ctx); await flush(); },
         draw: async () => { ctx.texts.length = 0; await ctx.frame(); return ctx.texts.map((x) => x.str); },
         drive: (kmh) => ctx.watchers.statusCarSpeed2({ speedVehicleCentreOfGravity: kmh / 0.015625 }),
         signal: (name, v) => ctx.watchers[name](v),
         exit: () => onExit.forEach((f) => f(0)),
     };
+}
+function feedSoc(ctx) {
+    if (values.soc === undefined || !ctx.watchers.statusChargeOfBatteryHybrid) return;
+    const raw = typeof values.soc === 'number' ? Math.round(values.soc * 2) : 255;
+    ctx.watchers.statusChargeOfBatteryHybrid({ displayChargingConditionHighVoltageStorage: raw });
 }
 const state = (dir) => JSON.parse(fs.readFileSync(path.join(dir, 'battery.json'), 'utf8'));
 
@@ -266,7 +272,9 @@ const checks = [
         const dir = tmp('sleep'), b = await boot(dir, {soc:50});
         await b.read(); const stamp = state(dir).lastSocT;
         now += 11*60000; values.soc = 60; asked = [];
-        await b.read();
+        // parked: no getter or diagnostic request goes out; the car's passive notifications still count
+        assert(b.watches.every(o => !o || !o.shouldRead || !o.shouldRead()), 'getters gated while parked');
+        diag.available = true; diag.emit('available', true); await flush();
         assert.strictEqual(state(dir).lastSocT, stamp);
         assert.strictEqual(asked.length,0);
         await b.readNow();
@@ -412,17 +420,34 @@ const checks = [
         now += 29999; assert.strictEqual(snapshot().cellT.avg, 25);
         now++; assert.strictEqual(snapshot().cellT, null); assert.strictEqual(lv.dashboard().batteryTemp, null);
     }],
-    ['reported capacity hook is optional and does not assume battery health', async () => {
-        const cfg=SPEC.config.battery;
-        cfg.capacity=[{did:'TEST',bytes:2,factor:.1}];
-        try {
-            const b=await boot(tmp('reported'),{soc:20,capacity:74});
-            await b.read(); await b.page(); await b.page();
-            const texts=await b.draw();
-            assert(texts.includes('74.0'));
-            assert(texts.includes('Capacity: reported'));
-            assert(texts.includes('~14.8 kWh'));
-        } finally {cfg.capacity=[];}
+    ['charge level comes from the car feed at 0.5 % per bit; feeds stay raw', async () => {
+        const { decodeSoc, EvFeeds, FEEDS } = require('../../apps/ixdrive/evfeeds');
+        assert.strictEqual(decodeSoc({ displayChargingConditionHighVoltageStorage: 145 }), 72.5);
+        assert.strictEqual(decodeSoc({ statusChargeOfBatteryHybrid: { displayChargingConditionHighVoltageStorage: 0 } }), 0);
+        for (const raw of [255, 201, -1, 1.5, null, undefined]) assert.strictEqual(decodeSoc({ displayChargingConditionHighVoltageStorage: raw }), null);
+        assert(!('soc' in SPEC.config.battery) && !('soc' in SPEC.config.battery.slow), 'no X5 45e diagnostic SOC');
+        for (const f of FEEDS) assert(SPEC.signals[f.iface] && SPEC.signals[f.iface][f.field], f.field + ' declared');
+        const logged = [], feeds = new EvFeeds({ info: (m) => logged.push(m) }, () => now);
+        for (let i = 0; i < 30; i++) feeds.record('displayRangeElectricVehicle', { displayRangeElectricVehicle: i });
+        assert.strictEqual(logged.length, 12, 'bounded log');
+        assert.strictEqual(feeds.get('displayRangeElectricVehicle').txt, '{"displayRangeElectricVehicle":29}');
+        now += 60001; assert.strictEqual(feeds.get('displayRangeElectricVehicle'), null, 'expires');
+
+        const dir = tmp('feed'), b = await boot(dir, {}, { diagPage: true });
+        b.signal('statusChargeOfBatteryHybrid', { displayChargingConditionHighVoltageStorage: 145 });
+        b.signal('displayRangeElectricVehicle', { displayRangeElectricVehicle: 180, displayRangeMaximum: 300 });
+        await flush();
+        assert.strictEqual(state(dir).lastSoc, 72.5);
+        b.signal('statusChargeOfBatteryHybrid', { displayChargingConditionHighVoltageStorage: 255 });
+        let texts = await b.draw();
+        assert(!texts.includes('73'), 'no-value default clears the charge level');
+        for (let i = 0; i < 5; i++) await b.page();
+        texts = await b.draw();
+        assert(texts.includes('RAW VALUE') && texts.includes('COMPARE WITH'), 'feeds lead the Diagnostics page');
+        assert(texts.some(x => x.includes('"displayRangeElectricVehicle":180')));
+        b.set('demo', 'on'); texts = await b.draw();
+        assert(texts.includes('paused in demo') && !texts.some(x => x.includes(':180')), 'demo hides real feeds');
+        b.exit();
     }],
     ['dashboard trip uses matched samples, excludes charging and resets', async () => {
         const L=Object.assign(L0(),{speed:60}), vals={DD68:400,DD69:-50};

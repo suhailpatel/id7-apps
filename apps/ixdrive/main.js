@@ -15,12 +15,13 @@ const { RangeModel } = require('./range');
 const startLive = require('./live');
 const { track } = require('./freshness');
 const { Insights, journeyStats, demoInsights } = require('./insights');
-const { createActivity, normalizeSoc, CapacityLearner } = require('./ev');
+const { createActivity, CapacityLearner } = require('./ev');
+const { EvFeeds, decodeSoc } = require('./evfeeds');
 
 const W = 1600, H = 520;
 const GO = '#2fd27a';
 const PAGES = ['main', 'energy', 'battery', 'journeys', 'trends', 'diag'];
-const DIAG_PARTS = ['diag', 'unit', 'scan', 'signals'];
+const DIAG_PARTS = ['feeds', 'diag', 'unit', 'scan', 'signals'];
 const DIAG_STEP = 492;           // each part is a full page (panel 44..512) plus a gap
 /** Comfort consumers, estimated from their levels (kW): seat heating per level 0..3, steering wheel. */
 const SEAT_KW = [0, 0.04, 0.07, 0.1];
@@ -31,7 +32,9 @@ const PACE_TAU = 300;            // s: the pace follows the last few minutes of 
 const PACE_KEEP = 15 * 60000;    // ms without moving after which there is no "current pace"
 const LOSS = 1.1;                // grid energy per kWh stored (charger + battery losses, estimate)
 const KM_MI = 0.621371;
-const VALUES = ['soc', 'capacity', 'soh', 'v12'];
+const VALUES = ['soh', 'v12'];
+/** The SOC source is part of the learning basis: a different source never mixes with old learning. */
+const SOC_SOURCE = 'Efficiencytainment2.statusChargeOfBatteryHybrid x0.5';
 
 /** Demo: charge drains, outside temperature swings across the cold threshold. */
 class Demo {
@@ -50,7 +53,7 @@ class Demo {
 mgu.run({
     async start(ctx) {
         const { ui, settings, log } = ctx;
-        const cfg = Object.assign({ ecu: 7, soc: [], soh: [], v12: [] },
+        const cfg = Object.assign({ ecu: 7, soh: [], v12: [] },
             (ctx.spec.config && ctx.spec.config.battery) || {});
         const S = (ctx.spec.config && ctx.spec.config.scaling) || {};
         const sc = (k, raw) => {
@@ -66,7 +69,7 @@ mgu.run({
         try { st = JSON.parse(fs.readFileSync(STATE, 'utf8')) || {}; } catch (e) { /* first run */ }
         const legacyCharges = JSON.parse(JSON.stringify({ log: (st.log || []).slice(-200), session: st.session || null,
             charges: (st.insights && st.insights.charges || []).slice(-20), charge: st.insights && st.insights.charge || null }));
-        const basis = () => JSON.stringify([cfg.ecu, cfg.soc, cfg.socWindow, cfg.capacity, cfg.soh, cfg.fast, cfg.powerSign]);
+        const basis = () => JSON.stringify([SOC_SOURCE, cfg.ecu, cfg.soh, cfg.fast, cfg.powerSign]);
         const resetLearning = () => {
             ['learn', 'drive', 'driveOff', 'aux', 'acAux', 'base', 'evSpeed', 'lastSoc', 'lastSocT', 'soh', 'sohT', 'capacityLearning', 'totalUse']
                 .forEach((k) => delete st[k]);
@@ -88,6 +91,14 @@ mgu.run({
             logger, Object.assign({}, opts, { shouldRead: () => active() && !usingDemo(),
                 shouldReceive: () => !usingDemo(), generation: () => telemetryGeneration }))
             .then(s => { subscriptions.push(s); return s; });
+        // the car's own EV feeds ride on the same proxy as the app's handlers for that interface
+        const feeds = new EvFeeds(log);
+        const feedHandlers = feeds.handlers();
+        const withFeeds = (iface, handlers) => {
+            const out = Object.assign({}, handlers), extra = feedHandlers[iface] || {};
+            Object.keys(extra).forEach((f) => { const own = out[f]; out[f] = own ? (v) => { extra[f](v); own(v); } : extra[f]; });
+            return out;
+        };
         let savedAt = 0, saved = JSON.stringify(st);
         const save = () => {
             savedAt = Date.now(); saved = JSON.stringify(st);
@@ -233,7 +244,7 @@ mgu.run({
         watch('de.bmw.infrastructure.EnvironmentalInformation', '1', {
             ExteriorTemperature: (v) => { const a = sc('ambient', v.temperatureExterior); live.ambient = a; },
         }, log).then((s) => log.info('ambient ' + (s.error ? 'error: ' + s.error : 'subscribed')));
-        watch('de.bmw.infotainment.vehicle.Vehicle2', '1', {
+        watch('de.bmw.infotainment.vehicle.Vehicle2', '1', withFeeds('de.bmw.infotainment.vehicle.Vehicle2', {
             statusCarSpeed2: (v) => {
                 const k = v.speedVehicleCentreOfGravity;
                 live.speed = k === 65535 || k == null ? null : k * 0.015625;
@@ -243,8 +254,7 @@ mgu.run({
                 onSpeed(live.speed);
                 live.speedT = Date.now();
             },
-            highVoltageStorageInfoToExternal: (v) => rawSeen('HV energy', v),
-        }, log).then((s) => log.info('speed ' + (s.error ? 'error: ' + s.error : 'subscribed')));
+        }), log).then((s) => log.info('speed ' + (s.error ? 'error: ' + s.error : 'subscribed')));
         watch('de.bmw.infotainment.climate.climatemaster.ClimateMaster', '1', {
             // both are lists, one entry per zone
             statusClimateSystemOn: (v) => onClimate('climate', 'airConditioningOn', v),
@@ -265,18 +275,24 @@ mgu.run({
         watch('de.bmw.body.steeringwheelcomfort.SteeringWheelClimate', '1', {
             heatingState: (v) => { rawSeen('wheel', v); const h = one(v, 'heating'); live.wheel = typeof h === 'boolean' ? h : null; },
         }, log, { pollMs: 15000 }).then((s) => log.info('steering wheel ' + (s.error ? 'error: ' + s.error : 'subscribed')));
-        watch('de.bmw.infotainment.KombiIF', '1', {
+        watch('de.bmw.infotainment.KombiIF', '1', withFeeds('de.bmw.infotainment.KombiIF', {
             // the car's own "power distribution" display: drive / climate share, seat heating bars, range they cost
             statusDisplayElectricalPowerDistribution: (v) => { rawSeen('distribution', v); live.pd = entries(v, 'displayRepartitionDriveElectricPower')[0] || null; },
-        }, log, { pollMs: 15000 }).then((s) => log.info('power distribution ' + (s.error ? 'error: ' + s.error : 'subscribed')));
-        watch('de.bmw.infotainment.drivingexcitement.Efficiencytainment2', '1', {
+        }), log, { pollMs: 15000 }).then((s) => log.info('power distribution ' + (s.error ? 'error: ' + s.error : 'subscribed')));
+        watch('de.bmw.infotainment.drivingexcitement.Efficiencytainment2', '1', withFeeds('de.bmw.infotainment.drivingexcitement.Efficiencytainment2', {
+            // the car's displayed charge level: the primary SOC source (iX3: no verified diagnostic SOC)
+            statusChargeOfBatteryHybrid: (v) => {
+                const soc = decodeSoc(v);
+                if (soc === null) { live.soc = null; live.socT = 0; return; }
+                live.soc = soc; live.socT = Date.now(); onSoc(soc, live.socT);
+            },
             statusBatteryTemperature: (v) => {
                 rawSeen('battery temp', v);
                 const e = entries(v, 'actualValueTemperatureHighVoltageStorage')[0];
                 live.batt = e ? { avg: battTemp(e.actualValueTemperatureHighVoltageStorage), min: battTemp(e.actualValueTemperatureHighVoltageStorageMinimum), max: battTemp(e.actualValueTemperatureHighVoltageStorageMaximum) } : null;
             },
-        }, log, { pollMs: 30000 }).then((s) => log.info('battery temperature ' + (s.error ? 'error: ' + s.error : 'subscribed')));
-        watch('de.bmw.infotainment.lsc.LSCDataSink', '1', {
+        }), log, { pollMs: 15000 }).then((s) => log.info('charge level and battery temperature ' + (s.error ? 'error: ' + s.error : 'subscribed')));
+        watch('de.bmw.infotainment.lsc.LSCDataSink', '1', withFeeds('de.bmw.infotainment.lsc.LSCDataSink', {
             statusHighVoltageStorage: (v) => {
                 rawSeen('HV voltage', v);
                 const x = one(v, 'actualValueVoltageHighVoltageStorage');
@@ -286,7 +302,10 @@ mgu.run({
                 if (volts > 150 && volts < 500) { live.lscV = volts; live.lscVT = Date.now(); }
                 else { live.lscV = null; live.lscVT = 0; }
             },
-        }, log).then((s) => log.info('HV voltage ' + (s.error ? 'error: ' + s.error : 'subscribed')));
+        }), log).then((s) => log.info('HV voltage ' + (s.error ? 'error: ' + s.error : 'subscribed')));
+
+        watch('de.bmw.infotainment.vehicle.Vehicle', '1', feedHandlers['de.bmw.infotainment.vehicle.Vehicle'], log)
+            .then((s) => log.info('EV trip data ' + (s.error ? 'error: ' + s.error : 'subscribed')));
 
         // connect in the background: the screen must not wait for the diagnostic link
         const diag = new Diag(ctx.signals, log);
@@ -346,33 +365,25 @@ mgu.run({
                 insights.tick(Date.now());
                 if (Date.now() - savedAt > 120000 && JSON.stringify(st) !== saved) save();
             }
+            if (!usingDemo() && active() && lv) {
+                // battery history no longer waits for the diagnostic link: SOC comes from the car's feed
+                const b = lv.dashboard(), c = capacityNow();
+                insights.battery({ t: Date.now(), temp: b.batteryTemp, spread: b.cellSpreadMv,
+                    soc: live.socT && Date.now() - live.socT < 60000 ? live.soc : null,
+                    capacity: c.kwh, source: c.source,
+                    capacityT: c.source === 'reported' ? live.capacityT : capacityLearner.state.t });
+            }
             if (busy || !diag.available || !active() || usingDemo()) return;
             busy = true;
             const epoch = telemetryGeneration, valid = () => active() && !usingDemo() && epoch === telemetryGeneration;
             try {
-                if (!live.capacityT || Date.now() - live.capacityT > 60000) {
-                    const capacity = await readValue('capacity');
-                    if (!valid()) return;
-                    if (G.isNum(capacity) && capacity >= 15 && capacity <= 200) { live.capacity = capacity; live.capacityT = Date.now(); }
-                }
-                // Read HV first; a missing optional 12 V value must not delay SOC.
-                const rawSoc = await readValue('soc');
-                if (!valid()) return;
-                const soc = normalizeSoc(rawSoc, cfg.socWindow);
-                if (soc !== null) { live.soc = soc; live.socT = Date.now(); onSoc(soc, live.socT); }
+                // SOC comes from the car's own feed (Efficiencytainment2), not from diagnostics
                 const sohDue = live.soh === null || Date.now() - live.sohT > settings.get('sohDays') * 86400000;
                 if (forceSoh || (sohDue && Date.now() - sohFailT > 3600000)) {
                     const soh = await readValue('soh');
                     if (!valid()) return;
                     if (soh !== null) { live.soh = soh; live.sohT = Date.now(); st.soh = soh; st.sohT = live.sohT; save(); }
                     else sohFailT = Date.now();
-                }
-                if (lv) {
-                    const b = lv.dashboard(), c = capacityNow();
-                    insights.battery({ t: Date.now(), temp: b.batteryTemp, spread: b.cellSpreadMv,
-                        soc: live.socT && Date.now() - live.socT < 60000 ? live.soc : null,
-                        capacity: c.kwh, source: c.source,
-                        capacityT: c.source === 'reported' ? live.capacityT : capacityLearner.state.t });
                 }
                 const v = await readValue('v12');
                 if (!valid()) return;
@@ -634,7 +645,7 @@ mgu.run({
          */
         function renderDiagAll(cv, t, d) {
             const parts = DIAG_PARTS.map((p) => ({
-                diag: () => renderDiag(cv, t, d), signals: () => renderSignals(cv, t, d),
+                diag: () => renderDiag(cv, t, d), signals: () => renderSignals(cv, t, d), feeds: () => renderFeeds(cv, t, d),
                 unit: () => lv.draw('unit', cv, t),
                 scan: () => { lv.draw('scan', cv, t); G.button(cv, t, 1576 - 20 - 120, 56, 120, 40, 'Reset', () => { lv.action('scan'); return render(); }, { key: 'scan', confirm: true }); },
             })[p]);
@@ -708,6 +719,26 @@ mgu.run({
             }));
             cv.text('A value n/a or wrong? Adjust config.battery in apps/ixdrive/app.json and rebuild.', 48, 488, 20, t.dim);
             if (d.demo) cv.text('Main page: demo data until the link answers', 1552, 488, 20, t.warn, { align: 'right' });
+        }
+
+        /** The car's own EV feeds, raw with their age: compare each with the car's display before decoding it. */
+        function renderFeeds(cv, t, d) {
+            G.panel(cv, t, 24, 44, 1552, 468, 'Car EV feeds (unverified, raw)');
+            const cols = [48, 290, 1210, 1380];
+            [['FEED', cols[0]], ['RAW VALUE', cols[1]], ['AGE', cols[2]], ['COMPARE WITH', cols[3]]]
+                .forEach(([s, x]) => cv.text(s, x, 106, 17, t.dim, { font: 'bold' }));
+            cv.fillRect(48, 118, 1504, 1, t.tick);
+            const rows = feeds.rows();
+            const step = Math.min(32, Math.floor(340 / rows.length));
+            rows.forEach((r, i) => {
+                const y = 146 + i * step, col = r.stale ? t.dim : t.text;
+                cv.text(r.label, cols[0], y, 19, col, { font: 'bold' });
+                const txt = d.demo ? 'paused in demo' : !r.txt ? 'no value yet' : r.decoded ? r.decoded + '   ' + r.txt : r.txt;
+                cv.text(txt.length > 84 ? txt.slice(0, 83) + '…' : txt, cols[1], y, 17, r.txt && !d.demo ? col : t.dim, { font: 'label' });
+                cv.text(r.ageS === null || d.demo ? '-' : r.ageS + ' s' + (r.stale ? ' old' : ''), cols[2], y, 17, col, { font: 'label' });
+                cv.text(r.compare, cols[3], y, 17, t.dim, { font: 'label' });
+            });
+            cv.text('Not used in any calculation. First values per feed are written to the app log.', 48, 498, 18, t.dim);
         }
 
         /** The car's signals as received (climate, comfort, power figures), one per line - for checking scalings. */
@@ -896,7 +927,7 @@ mgu.run({
         ctx.loop('MAIN', 2, render);
         settings.onChange((k) => {
             if (k === 'demo') {
-                telemetryGeneration++; clearAux(); clearSeats();
+                telemetryGeneration++; clearAux(); clearSeats(); feeds.clear();
                 zones.ac = {}; zones.climate = {}; live.speed = null; live.speedT = 0; live.lscV = null; live.lscVT = 0;
                 capacityLearner.anchor = null; capacityLearner.candidate = null;
                 seg.valid = false; insights.breakContinuity(); publishTrips(); publishLegacyCharges(); refreshSignals();

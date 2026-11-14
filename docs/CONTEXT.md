@@ -26,7 +26,7 @@ Source revision: `8048eb091a20c5e2bfe36cda96e938472d2dfdc5`.
 
 ## Implemented state
 
-App identity: `ixdrive`, version `0.1.4`, logging ID `OAXD`; separate settings,
+App identity: `ixdrive`, version `0.2.0`, logging ID `OAXD`; separate settings,
 history and home-screen widget. The icon is a white SUV with a cyan lightning bolt
 on black, 140 × 140 PNG, with generation prompt in `apps/ixdrive/icon-prompt.txt`.
 
@@ -538,3 +538,28 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
   checks, `store:check` and all seven Store builds passed. Demo and unavailable
   states were visually reviewed on all three pages. No car installation or
   publication was performed.
+
+## iXDrive car-feed SOC — 14 November 2026
+
+- User reported the apps did not work at all on the G08 and allowed removing
+  non-iX code. Analysis of capture `headunit-20261111T121453Z-i85jrqjx`: all battery
+  apps took SOC/voltage/current only from X5 45e UDS candidates at SME `0x07`. The
+  car had iXDrive 0.1.0 installed; no other repo apps were installed.
+- BMW's stock iX3 apps (preheating, trigger_service, oap-cdc) instead use SOME/IP
+  feeds. oap-cdc decodes `Efficiencytainment2.statusChargeOfBatteryHybrid.
+  displayChargingConditionHighVoltageStorage` as 0.5 % per bit (255 = no value).
+  "Hybrid" is BMW's shared naming; the field is used on this BEV's head unit.
+- iXDrive `0.2.0` takes SOC from that feed (getters every 15 s while active, plus
+  notifications). Diagnostic `DDBC` SOC, `socWindow` and the capacity hook were
+  removed; learning basis changed, so old learning resets. Battery history no
+  longer waits for the diagnostic link. Power/cells/12 V remain optional UDS
+  candidates: the car exposes no kW/current feed.
+- New Diagnostics section **Car EV feeds** (first) shows raw range, max energy,
+  energy now/max, net energy, LSC HV data/voltage, trip consumption and power
+  share with age and what to compare against; first 12 distinct values per field
+  go to the app log. `statusMaxCapacityHVBattery` is 12-bit (default 4095), so its
+  kWh scale is unknown and it is not used. All flags pass `check_signals.py`
+  against the captured catalogue.
+- Trip Capsule `0.1.5` follows iXDrive's minimum version. iXCharge, Observatory and
+  iX Pulse still use the X5 45e SOC candidate; port after iXDrive's feed is
+  confirmed on the car. Live G08 delivery remains unvalidated; nothing installed.

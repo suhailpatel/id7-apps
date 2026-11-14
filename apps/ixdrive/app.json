@@ -1,8 +1,8 @@
 {
   "id": "ixdrive",
   "title": "iXDrive",
-  "description": "EV driving dashboard for iDrive 7: learned range and capacity, energy, battery readings and journeys. G08 diagnostic candidates await vehicle validation.",
-  "version": "0.1.4",
+  "description": "EV driving dashboard for the iX3 on iDrive 7: car-reported charge level, learned range and capacity, energy and journeys. Optional battery diagnostics await G08 validation.",
+  "version": "0.2.0",
   "vendor": "custom",
   "loggingId": "OAXD",
   "iconGlyph": "iX",
@@ -21,7 +21,8 @@
     },
     "de.bmw.infotainment.vehicle.Vehicle2": {
       "statusCarSpeed2": "rs",
-      "highVoltageStorageInfoToExternal": "s"
+      "highVoltageStorageInfoToExternal": "s",
+      "statusMaxCapacityHVBattery": "rs"
     },
     "de.bmw.infotainment.climate.climatemaster.ClimateMaster": {
       "statusClimateSystemOn": "rs",
@@ -42,13 +43,23 @@
       "heatingState": "rs"
     },
     "de.bmw.infotainment.KombiIF": {
-      "statusDisplayElectricalPowerDistribution": "rs"
+      "statusDisplayElectricalPowerDistribution": "rs",
+      "displayRangeElectricVehicle": "rs",
+      "statusBordcomputerElectricData": "rs"
     },
     "de.bmw.infotainment.drivingexcitement.Efficiencytainment2": {
-      "statusBatteryTemperature": "rs"
+      "statusBatteryTemperature": "rs",
+      "statusChargeOfBatteryHybrid": "rs",
+      "statusPowerRelativHybrid": "rs",
+      "displayPowerDrive": "s"
     },
     "de.bmw.infotainment.lsc.LSCDataSink": {
-      "statusHighVoltageStorage": "s"
+      "statusHighVoltageStorage": "s",
+      "dataHighVoltageStorage": "s",
+      "displayDataHighVoltageStorage": "s"
+    },
+    "de.bmw.infotainment.vehicle.Vehicle": {
+      "statusTripInformationElectricHybrid": "rs"
     }
   },
   "startWidget": {
@@ -377,20 +388,9 @@
     }
   ],
   "config": {
-    "comment": "Read-only UDS candidates inherited from eDrive, not validated on the G08 iX3. Validate ECU, payload, units and sign on each vehicle. Capacity and SOH candidates stay empty until their usable-kWh/health meaning is verified. Current usable capacity can be learned from synchronized power and displayed SOC. No model name or nominal battery size is assumed.",
+    "comment": "SOC comes from the car's own feed Efficiencytainment2.statusChargeOfBatteryHybrid (0.5 % per bit, BMW's own decoding). The UDS candidates below (power, cells, temperatures, 12 V) come from the X5 45e and are unverified on the G08 iX3; they stay optional. Capacity is learned; the car's max-energy feed is shown raw until its scale is verified. No model name or nominal battery size is assumed.",
     "battery": {
       "ecu": 7,
-      "soc": [
-        {
-          "did": "DDBC",
-          "bytes": 2,
-          "at": 0,
-          "factor": 0.1,
-          "offset": 0,
-          "min": 0,
-          "max": 100
-        }
-      ],
       "soh": [],
       "v12": [
         {
@@ -471,19 +471,6 @@
         ]
       },
       "slow": {
-        "soc": [
-          {
-            "did": "DDBC",
-            "fields": {
-              "pct": {
-                "bytes": 2,
-                "factor": 0.1,
-                "min": 0,
-                "max": 100
-              }
-            }
-          }
-        ],
         "cellV": [
           {
             "did": "DFA5",
@@ -581,13 +568,7 @@
             }
           }
         ]
-      },
-      "socWindow": {
-        "empty": 0,
-        "full": 100,
-        "comment": "Expected displayed SOC. If the verified DID reports physical SOC, set its measured empty/full limits; shared by the main page and live/widget reader."
-      },
-      "capacity": []
+      }
     },
     "scaling": {
       "batteryTemp": {

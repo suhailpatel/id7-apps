@@ -26,7 +26,7 @@
  *   (the first bar button's name on that page, or null), lv.action(name), lv.climate()
  */
 const fs = require('fs');
-const { normalizeSoc, powerScale } = require('./ev');
+const { powerScale } = require('./ev');
 const path = require('path');
 const { recent, value: freshValue } = require('./freshness');
 const { ScaledCanvas, withAlpha } = require('./kit/canvas');
@@ -94,7 +94,7 @@ module.exports = function live(ctx, sh) {
     process.on('exit', () => { if (JSON.stringify(st) !== saved) save(); });
 
     /* ---------- this part's own values (the battery unit's); the car's are iXDrive's (L) ---------- */
-    const live = { v: null, vT: 0, a: null, aT: 0, kw: null, kwT: 0, soc: null, cellV: null, cellT: null, coolant: null, limits: null, slowT: {} };
+    const live = { v: null, vT: 0, a: null, aT: 0, kw: null, kwT: 0, cellV: null, cellT: null, coolant: null, limits: null, slowT: {} };
 
     /* ---------- UDS: candidates with several fields on one reply ---------- */
     const pick = {};
@@ -301,7 +301,7 @@ module.exports = function live(ctx, sh) {
     schedulePower();
 
     /* ---------- slow reads (only while the screen is shown) ---------- */
-    const SLOW = ['soc', 'cellV', 'cellT', 'coolant', 'limits'];
+    const SLOW = ['cellV', 'cellT', 'coolant', 'limits'];
     const slowFail = {}, slowLogT = {}, slowMiss = {}, slowSkipUntil = {};
     // the pages with cells, temperatures and the climate unit's values (Battery, Battery unit, Scan): drawn this
     // recently. Elsewhere (Range, Energy: only the power) those reads wait, so the power reads get the link
@@ -313,7 +313,7 @@ module.exports = function live(ctx, sh) {
         for (const name of SLOW) {
             if (!canRead(epoch)) break;
             if (!(cfg.slow[name] || []).length || Date.now() < (slowSkipUntil[name] || 0)) continue;
-            if (!pageShown() && name !== 'soc' && name !== 'limits') continue;
+            if (!pageShown() && name !== 'limits') continue;
             // each try is its own turn on the link, so a power read can go between them
             const one = () => exclusive(() => canRead(epoch) ? readGroup(name, cfg.slow[name]).catch((e) => { log.warn(name + ': ' + e); return null; }) : null, false, name);
             let r = await one();
@@ -336,7 +336,7 @@ module.exports = function live(ctx, sh) {
             slowMiss[name] = 0;
             const f = fieldsOf(cfg.slow[name][pick[name]]);
             const value = f.length === 1 ? r[f[0]] : r;
-            live[name] = name === 'soc' ? normalizeSoc(value, cfg.socWindow) : value;
+            live[name] = value;
             live.slowT[name] = Date.now();
         }
         if (pageShown()) await readProbes();
@@ -606,7 +606,7 @@ module.exports = function live(ctx, sh) {
         return {
             demo: false, kw: recent(live.kwT, now, KW_KEEP) ? live.kw : null, kwAge: live.kwT ? now - live.kwT : null, stale,
             v: fresh(live.vT, 5) ? live.v : fresh(L.lscVT, 5) ? L.lscV : null, a: fresh(live.aT, 5) ? live.a : null,
-            speed: speedNow(), soc: fresh(live.slowT.soc, 60) ? live.soc : null,
+            speed: speedNow(), soc: fresh(L.socT, 60) ? L.soc : null,
             cellV: slowOk('cellV') ? live.cellV : null, cellT: slowOk('cellT') ? live.cellT : null, carT: freshValue(L, 'batt', now),
             coolant: slowOk('coolant') ? live.coolant : null, limits: slowOk('limits') ? live.limits : null,
             ambient: freshValue(L, 'ambient', now), climate: L.climate, blower: L.blower, blowerTop: L.blowerTop,

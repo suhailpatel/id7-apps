@@ -2,7 +2,7 @@
   "id": "tripcapsule",
   "title": "Trip Capsule",
   "description": "Saved journey cards from iXDrive, with distance, duration, energy, temperature, labels and favourites.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "vendor": "custom",
   "loggingId": "OOI1",
   "iconGlyph": "TC",
