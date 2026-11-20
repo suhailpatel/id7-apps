@@ -1,7 +1,7 @@
 {
   "id": "suhailpatel_ixcluster",
   "sourceApp": "ixcluster",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "title": "iX Cluster",
   "description": "Thirteen full-screen cluster themes for the iX3: power and regen, charge, battery temperature, range and tyres. Requires Cluster renderer; G08 validation pending.",
   "vendor": "suhailpatel",

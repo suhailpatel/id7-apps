@@ -100,13 +100,17 @@ test('demo is explicit, flagged and never reads the car', async () => {
     const watches = [], reads = [];
     const opts = { demo: 'off' };
     const ctx = { spec, log: { info() {}, warn() {} }, settings: { get: (k) => opts[k] },
-        signals: { watch: async (iface, inst, h, log, o) => { watches.push({ iface, o }); return { available: true }; },
+        signals: { watch: async (iface, inst, h, log, o) => { watches.push({ iface, inst, o }); return { available: true }; },
             proxy: async () => ({}), on: async () => {}, onAvailable: async () => {}, call: async () => { reads.push(1); return {}; } } };
-    const car = new EvCar(ctx, { 'de.bmw.infotainment.drivingexcitement.FES': { statusFESVehicleDynamicSwitchHMI() {} } });
+    const car = new EvCar(ctx, { 'de.bmw.infotainment.drivingexcitement.FES': { statusFESVehicleDynamicSwitchHMI() {} },
+        'de.bmw.infotainment.hmi.hmimediastate.HmiMediaState': { playerMetadata() {} } });
     await new Promise((r) => setImmediate(r));
     assert.strictEqual(car.data().demo, false);
     assert(watches.every((w) => w.o.shouldRead && w.o.shouldReceive), 'every watch is gated');
     assert(watches.some((w) => w.iface.endsWith('FES')), 'the engine\'s fields join the same watches');
+    // the unit has no instance "1" of now playing (it has HMI_CID, HMI_FoMo_Left, HMI_FoMo_Right): the installer refused it
+    assert.strictEqual(watches.find((w) => w.iface.endsWith('HmiMediaState')).inst, 'HMI_CID');
+    assert.strictEqual(watches.find((w) => w.iface.endsWith('Vehicle2')).inst, '1');
     opts.demo = 'on'; car.demoOn = car._wantDemo();
     assert.strictEqual(car.data().demo, true);
     assert.strictEqual(car.active(), false, 'no reads in demo');
@@ -165,6 +169,7 @@ test('app spec: read-only EV signals, explicit demo off, no engine settings', ()
     assert.deepStrictEqual(s.demo.options.map((o) => o[0]), ['off', 'on'], 'no automatic demo');
     ['redline', 'tankLitres', 'warnOil', 'shiftCue'].forEach((k) => assert(!s[k], k));
     assert.strictEqual(spec.config.target, 'panel');
+    assert.strictEqual(spec.signals['de.bmw.infotainment.hmi.hmimediastate.HmiMediaState']._instances, 'HMI_CID');
     assert.strictEqual(spec.config.groups.hvV[0].did, 'E54D', 'fully electric candidates first');
     const themes = s.hudLayout.options.map((o) => o[0]);
     ['mview', 'sport', 'minimal', 'cruise', 'ribbon', 'gt3', 'm', 'vector', 'track', 'drag', 'rally', 'retro80s', 'dyno'].forEach((t) => assert(themes.indexOf(t) >= 0, t));

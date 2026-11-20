@@ -155,7 +155,9 @@ class EvCar {
             (watches[iface] = watches[iface] || {})[f] = mine ? (v) => { mine(v); theirs(v); } : theirs;
         }));
         Object.keys(watches).forEach((iface) => {
-            Promise.resolve(ctx.signals.watch(iface, '1', watches[iface], this.log, {
+            // the instance app.json declares (now playing is HMI_CID, the centre display), else "1"
+            const sig = (ctx.spec.signals || {})[iface], instance = sig && typeof sig._instances === 'string' ? sig._instances : '1';
+            Promise.resolve(ctx.signals.watch(iface, instance, watches[iface], this.log, {
                 pollMs: iface.indexOf('Vehicle2') > 0 ? 2000 : iface.indexOf('KombiIF') > 0 ? 5000 : 15000,
                 shouldRead: () => this.active(),
                 shouldReceive: () => !this.demoOn,

@@ -8,6 +8,10 @@ for f in sorted(glob.glob('apps/*/app.json')):
     for iface,fields in a.get('signals',{}).items():
         i=db['interfaces'].get(iface)
         if not i: print(a['id'],'MISSING IFACE',iface); bad+=1; continue
+        # the instance the app asks for must exist on the unit (the installer refuses the manifest otherwise)
+        have=(db.get('instanceIDs') or {}).get(iface)
+        want=fields.get('_instances','1')
+        if isinstance(have,dict) and want not in have: print(a['id'],iface,'no instance',want,'(has',', '.join(sorted(have))+')'); bad+=1
         for k,v in fields.items():
             if k in('_methods','_broadcasts'):
                 key='methods' if k=='_methods' else 'broadcasts'

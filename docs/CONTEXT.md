@@ -640,3 +640,8 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
   only; best time saved) are back. Gear fonts gained B (seven-segment uses d/b), M's
   small print K/W. All 13 themes and the page tabs were rendered and reviewed;
   test_ixcluster.js covers every theme's tokens, glyphs, slots and signals.
+- First car install of iX Cluster failed: the installer refused the manifest because
+  `HmiMediaState` has no instance "1" on the G08 (it has `HMI_CID`, `HMI_FoMo_Left`,
+  `HMI_FoMo_Right`; Cluster Themes declared none). `0.1.3` declares `HMI_CID` and
+  evcar.js watches each interface on its declared instance. `check_signals.py` now
+  also checks declared instances against the catalogue's `instanceIDs`; every app passes.
