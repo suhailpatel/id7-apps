@@ -26,7 +26,7 @@ Source revision: `8048eb091a20c5e2bfe36cda96e938472d2dfdc5`.
 
 ## Implemented state
 
-App identity: `ixdrive`, version `0.2.0`, logging ID `OAXD`; separate settings,
+App identity: `ixdrive`, version `0.2.1`, logging ID `OAXD`; separate settings,
 history and home-screen widget. The icon is a white SUV with a cyan lightning bolt
 on black, 140 × 140 PNG, with generation prompt in `apps/ixdrive/icon-prompt.txt`.
 
@@ -563,3 +563,11 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
 - Trip Capsule `0.1.5` follows iXDrive's minimum version. iXCharge, Observatory and
   iX Pulse still use the X5 45e SOC candidate; port after iXDrive's feed is
   confirmed on the car. Live G08 delivery remains unvalidated; nothing installed.
+
+## Upstream eDrive ports — 20 November 2026
+
+- User asked which post-fork eDrive changes (idrive7-apps, 10–17 Nov) apply here,
+  then requested the fixes and fully electric candidates, one commit each.
+- iXDrive `0.2.1`: the home-screen widget's progress bar takes a 0..1 share, not
+  a percentage (upstream `bac04fc`); it previously showed full at any power.
+  Trip Capsule `0.1.6` follows the minimum iXDrive version.
