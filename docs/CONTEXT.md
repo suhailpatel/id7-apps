@@ -26,7 +26,7 @@ Source revision: `8048eb091a20c5e2bfe36cda96e938472d2dfdc5`.
 
 ## Implemented state
 
-App identity: `ixdrive`, version `0.2.2`, logging ID `OAXD`; separate settings,
+App identity: `ixdrive`, version `0.2.3`, logging ID `OAXD`; separate settings,
 history and home-screen widget. The icon is a white SUV with a cyan lightning bolt
 on black, 140 × 140 PNG, with generation prompt in `apps/ixdrive/icon-prompt.txt`.
 
@@ -579,3 +579,10 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
   acceptance from `/tmp` was reported upstream, not observed on this G08.
   All apps bumped: iXDrive 0.2.2, Trip Capsule 0.1.7, iXCharge 0.1.3,
   Observatory 0.1.4, iX Pulse 0.1.9, TyreWatch 0.1.4, iX Service 0.1.1.
+- Shared runtime: `signals.js` runs native calls in two lanes, still one at a
+  time. Method calls, writes and proxy/`on`/availability set-ups (the diagnostic
+  link) go before queued `watch()` set-ups, with a set-up after at most four urgent
+  calls in a row (upstream `c3ec187`, `bae1732`). Previously every UDS request at
+  start waited behind all subscription set-ups. All apps bumped: iXDrive 0.2.3,
+  Trip Capsule 0.1.8, iXCharge 0.1.4, Observatory 0.1.5, iX Pulse 0.1.10,
+  TyreWatch 0.1.5, iX Service 0.1.2.

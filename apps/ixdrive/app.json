@@ -2,7 +2,7 @@
   "id": "ixdrive",
   "title": "iXDrive",
   "description": "EV driving dashboard for the iX3 on iDrive 7: car-reported charge level, learned range and capacity, energy and journeys. Optional battery diagnostics await G08 validation.",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "vendor": "custom",
   "loggingId": "OAXD",
   "iconGlyph": "iX",
