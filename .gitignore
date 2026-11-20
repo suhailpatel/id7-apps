@@ -54,3 +54,4 @@ egs-snapshot*.json
 .aws/
 /tmp/
 /preview*/
+kit/bench/.data/
