@@ -116,22 +116,30 @@ test('demo is explicit, flagged and never reads the car', async () => {
     car.stop();
 });
 
-test('the five themes resolve every token and their fonts hold every character', () => {
+test('all thirteen themes resolve every token and their fonts hold every character', () => {
     const fonts = {};
     const font = (n) => fonts[n] || (fonts[n] = JSON.parse(fs.readFileSync(path.join(APP, 'hud', 'fonts', n + '.json'), 'utf8')).glyphs);
     // tokens hud.js answers itself (not EV values): what they can show
     const ENGINE = { speed: '188', speed2: '117', 'u:speedLc': 'km/h mph', 'u:speed2Lc': 'mph km/h', 'u:speed': 'KM/H MPH', 'u:temp': '°F°C',
         'u:dist': 'KMMI', 'u:distLc': 'kmmi', range: '412', ambient: '+-12', ambientN: '-12', time: '12:59', ampm: 'AMPM', ampmLc: 'ampm',
-        mode: 'COMFORT SPORT ECO PRO', avgSpeed: '88', badge: '', holiday: '', 'spd:0': '0', };
+        mode: 'COMFORT SPORT ECO PRO', avgSpeed: '88', badge: '', holiday: '', 'spd:0': '0', 'u:boost': 'PSIBAR', 'u:boostLc': 'psibar',
+        runLabel: '0-60 MPH0-100 KM/H', runState: 'READYGODONE', run: '4.32', runBest: '-.--4.32', gSide: '0.42 L R', gFwd: '0.31 ACC BRK',
+        gBest: '0.88', gMax: '1.2', gLat: '0.42', mediaTitle: '', mediaArtist: '', mediaElapsed: '1:23', mediaLeft: '-2:10' };
+    // readout slots: every EV sensor's value, name and unit (sensors.js)
+    const sensors = require(path.join(APP, 'sensors'));
+    const slot = (kind) => sensors.LIST.map((sn) => kind === 'slot' ? '0123456789:.' : kind === 'slotSuffix' ? (sn.suffix || '')
+        : kind === 'slotUnit' ? (sn.unit ? sn.unit(true) + sn.unit(false) : 'AMPM') : (sn.short && kind === 'slotHeadS' ? sn.short : sn.head)).join('');
     const values = { kw: -188, speed: 60, soc: 64, battT: -9, stage: 'D', program: 'B', demo: false };
     const h = hud(values);
-    ['mview', 'sport', 'minimal', 'cruise', 'ribbon'].forEach((name) => {
+    ['mview', 'sport', 'minimal', 'cruise', 'ribbon', 'gt3', 'm', 'vector', 'track', 'drag', 'rally', 'retro80s', 'dyno'].forEach((name) => {
         const o = JSON.parse(fs.readFileSync(path.join(APP, 'hud', 'layouts', name + '.json'), 'utf8'));
         o.widgets.filter((w) => w.type === 'text').forEach((w) => {
             const out = String(w.text).replace(/\{\{([a-zA-Z0-9:\/-]+)\}\}/g, (_, t) => {
                 const e = ev.token(h, t);
                 if (e !== undefined) return e === '--' ? '-' : e;
                 if (t.indexOf('spd:') === 0) return '0123456789';
+                if (/^slot/.test(t)) return slot(t.split(':')[0]);
+                if (/^tyre[PT]:/.test(t)) return '0123456789.';
                 if (t.indexOf('temp:') === 0) return '-0123456789';
                 assert(Object.prototype.hasOwnProperty.call(ENGINE, t), name + '.' + w.id + ': unknown token {{' + t + '}}');
                 return ENGINE[t];
@@ -141,7 +149,9 @@ test('the five themes resolve every token and their fonts hold every character',
             out.split('').forEach((c) => assert(c === ' ' || g[c], name + '.' + w.id + ' (' + w.font + '): no glyph for "' + c + '" in "' + out + '"'));
         });
         assert(!o.widgets.some((w) => w.type === 'stripe'), name + ': no M stripe on the iX3');
-        assert(!/\{\{(oil|coolant|boost|rpm|fuelPct|gearnum)\}\}/.test(JSON.stringify(o.widgets)), name + ': engine tokens left');
+        assert(!/\{\{(oil|coolant|boost|rpm|fuelPct|gearnum|boostPeak|torque|powerPct|lastShift|verdict|setup:[a-z]+)\}\}/.test(JSON.stringify(o.widgets)), name + ': engine tokens left');
+        (o.slots || []).forEach((sl) => assert(sensors.get(sl.default), name + ' slot ' + sl.id + ': ' + sl.default + ' is an EV sensor'));
+        assert(!/"signal": "(rpm|boost|oil|coolant|torquePct|powerPct|intake)"/.test(JSON.stringify(o, null, 1)), name + ': engine signals left');
     });
 });
 
@@ -157,7 +167,7 @@ test('app spec: read-only EV signals, explicit demo off, no engine settings', ()
     assert.strictEqual(spec.config.target, 'panel');
     assert.strictEqual(spec.config.groups.hvV[0].did, 'E54D', 'fully electric candidates first');
     const themes = s.hudLayout.options.map((o) => o[0]);
-    ['mview', 'sport', 'minimal', 'cruise', 'ribbon'].forEach((t) => assert(themes.indexOf(t) >= 0, t));
+    ['mview', 'sport', 'minimal', 'cruise', 'ribbon', 'gt3', 'm', 'vector', 'track', 'drag', 'rally', 'retro80s', 'dyno'].forEach((t) => assert(themes.indexOf(t) >= 0, t));
 });
 
 (async () => {

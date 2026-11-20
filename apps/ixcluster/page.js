@@ -323,7 +323,7 @@ class Page {
     sensorText(sn) {
         if (!sn) return '--';
         const u = this.hud.sensorUnit(sn), v = this.hud.sensorValue(sn);
-        return v + (sn.suffix && u.charAt(0) === '°' ? u : u ? ' ' + u.toLowerCase().replace(/^°/, '°') : '');
+        return v + (sn.suffix && u.charAt(0) === '°' ? u : u ? ' ' + (u === 'KW' ? 'kW' : u.toLowerCase().replace(/^°/, '°')) : '');
     }
 
     /** Numbered slots of a layout with what each shows (live) on the left; the sensors to pick from on the right. */
@@ -425,13 +425,13 @@ class Page {
         // live state from waze.js: the map showing, waiting, the Waze app busy, Waze on Cluster missing
         const info = this.hud.waze ? this.hud.waze.info() : { text: 'Not available in this app', up: false, ok: false };
         let text = info.text;
-        if (this.get('mapInTheme') && !this.hud.mapLayout && this.hud.activeName !== 'off') text = 'This theme has no map version (M view and Sport do)';
+        if (this.get('mapInTheme') && !this.hud.mapLayout && this.hud.activeName !== 'off') text = 'This theme has no map version (M view, Sport, GT3, M and Vector do)';
         glass(cv, CX, y, w, 46, false);
         cv.circle(CX + 26, y + 23, 7, info.up ? C.live : info.ok ? C.dim : '#e0a340');
         cv.text(text, CX + 46, y + 30, 18, info.up ? C.live : C.text, { literal: true });
         y += 54;
         note(cv, CX, y + 26, [
-            'On: M view and Sport open a window in the middle and Waze on Cluster draws its map in it, above',
+            'On: M view, Sport, GT3, M and Vector open a window and Waze on Cluster draws its map in it, above',
             'BMW\'s own map view, so nothing shows twice. When the map goes away the theme fills back in.',
             'While on, Waze\'s map on the HUD is off (the cluster and the HUD share one picture).',
             'Needs robertnisipeanu\'s Waze on Cluster. Turning this off gives Waze its usual place back.',

@@ -3,7 +3,7 @@
 Full-screen instrument cluster themes for BMW iDrive 7 and the **G08 iX3**, drawn on
 the whole 1920 × 720 cluster through cluster-render. Adapted from bimmer-lab's
 Cluster Themes (MIT), with every engine readout replaced by an EV one.
-App ID `ixcluster`, version **0.1.1**, logging ID `OAXL`.
+App ID `ixcluster`, version **0.1.2**, logging ID `OAXL`.
 Independent settings; no iXDrive dependency, saved telemetry or learning.
 
 ## Themes
@@ -15,6 +15,21 @@ Independent settings; no iXDrive dependency, saved telemetry or learning.
 | **Minimal** | A huge speed with the selector. A thin power line runs above it. Below it are a charge line with its %, the battery temperature and the kW. |
 | **Cruise** | Speed and selector, then charge, battery temperature, power and average speed. |
 | **Ribbon** | A ribbon of light that fills with power. It shows power, battery temperature and charge on the left, and mode, electric range and average speed on the right. It has holiday editions. |
+| **GT3** | A race dash. A row of 18 lights and a segmented bar fill with power. The selector is huge in the middle, with readout boxes either side and peak power. |
+| **M** | Traced from an M8's cluster. The left blade shows power and the right blade shows regen. Readouts sit on the left card, with power, charge, battery temperature and regen rows on the right, plus charge and battery-temperature dials. There's no M tricolour. |
+| **Vector** | A race-sim dash. A round counter shows power, with the speed and selector inside. It has power, regen and peak bars, rings for battery temperature, charge, range and regen, and a now-playing music panel. |
+| **Track** | A power bar, all four tyres (pressure and temperature), a big selector, speed and charge, plus three readouts. |
+| **Drag** | A full-width power bar and a 0-60 mph (0-100 km/h) timer that keeps your best time from real drives only. It also shows peak power, battery temperature, power and charge. |
+| **Rally** | A segmented power arc, a G-meter with its trail and grip outline, and power plus three readouts. |
+| **Retro 80s** | Seven-segment digits, with a `d` and `b` standing in for D and B. Bar graphs show battery temperature, regen and charge, alongside power and two readouts. |
+| **Dyno** | Eleven readout tiles plus tall POWER and REGEN tiles, each with a bar. |
+
+GT3, M, Track, Drag, Rally, Retro 80s and Dyno have **readout slots**. Pick what each
+slot shows on the Readouts tab: power, regen, power %, peak power, charge, range, speed,
+average speed, g, the clock, battery or outside temperature, or any tyre's pressure or
+temperature. The G-meter tab sets Rally's range, trail and direction. Tyre values come
+from the car's tyre monitor (`TPMS`), are read only while reads are allowed, and expire
+after 60 s.
 
 Power is drawn on a **labelled display scale**, not the car's rated power. The scale
 is at least 100 kW, in whole steps, and grows with the highest kW seen since the app
@@ -28,7 +43,7 @@ uncovered.
 
 Every theme follows the drive mode buttons. The defaults are Comfort → M view,
 Sport → Sport and Eco Pro → Cruise. Pick **Off** for BMW's own cluster. The Waze map
-can open inside M view and Sport. Calibration-grid and map-calibration layouts are
+can open inside M view, Sport, GT3, M and Vector. Calibration-grid and map-calibration layouts are
 kept for alignment photos.
 
 ## Data
@@ -42,6 +57,7 @@ kept for alignment photos.
 | Battery temperature | Cells' average temperature candidate (`DDC0`) |
 | Electric range | `KombiIF.displayRangeElectricVehicle` in the car's own distance unit |
 | Outside temperature, drive mode | `EnvironmentalInformation`, `FES` HMI mode |
+| Tyres, now playing | `TPMS` with the car's units (`Vehicle`), `HmiMediaState` (front screen) |
 
 Every value expires on its own (speed 5 s, power 12 s, charge 60 s, outside
 temperature 30 min). Unknown or stale values read `--` or stay unlit. Diagnostic

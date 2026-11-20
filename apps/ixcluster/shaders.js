@@ -30,6 +30,7 @@ uniform float u_highAt;
 uniform vec4 u_track;
 uniform float u_flash;
 uniform vec2 u_skip;
+uniform float u_regen;     // iX Cluster: 1 while power flows into the battery (lit in eDrive blue)
 
 void main() {
     float gapPx = 3.0;
@@ -58,6 +59,7 @@ void main() {
     float pos = (idx + 0.5) / u_segs;               // segment centre, 0..1
     bool lit = pos <= u_value;
     vec3 c = pos >= u_highAt ? u_high : (pos >= u_midAt ? u_mid : u_low);
+    if (u_regen > 0.5) c = vec3(0.2, 0.75, 1.0);
     if (u_flash > 0.5) c = u_high;
     gl_FragColor = lit ? vec4(c, cover) : vec4(u_track.rgb, u_track.a * cover);
 }
@@ -679,6 +681,7 @@ uniform float u_orange;   // 0..1, orange dashes from here
 uniform float u_redFrom;  // 0..1, red dashes from here (the redline)
 uniform float u_shiftNow;
 uniform vec3 u_red;
+uniform float u_regen;     // iX Cluster: 1 while power flows into the battery (lit in eDrive blue)
 
 float cov(float d) { return clamp(0.5 - d, 0.0, 1.0); }
 vec4 over(vec4 top, vec4 under) {
@@ -706,14 +709,15 @@ void main() {
         float across = clamp(d / w, 0.0, 1.0);
         float yn = y0 - u_value * (y0 - y8);
         vec4 g = vec4(0.62, 0.67, 0.74, mix(0.42, 0.06, across));          // empty glass (bright at the outer edge, as the M8's)
-        if (p.y > yn) g = u_shiftNow > 0.5 ? vec4(u_red * 0.8, 0.6) : vec4(mix(vec3(0.86, 0.88, 0.92), vec3(0.6, 0.63, 0.68), across), mix(0.34, 0.22, across));
+        if (p.y > yn) g = u_regen > 0.5 ? vec4(0.2, 0.75, 1.0, 0.5) : u_shiftNow > 0.5 ? vec4(u_red * 0.8, 0.6) : vec4(mix(vec3(0.86, 0.88, 0.92), vec3(0.6, 0.63, 0.68), across), mix(0.34, 0.22, across));
         // the foot: the bottom 20 px as an outlined grey block, as the M8 draws it
         if (p.y > y0 - 20.0) g = over(vec4(0.7, 0.72, 0.78, 0.22), g);
         g = over(vec4(0.9, 0.92, 0.95, 0.7 * cov(min(abs(p.y - (y0 - 19.0)), abs(p.y - (y0 - 1.5))) - 0.8)), g);
         // the marker: a red block at the rpm with a glow either side of it
         float dm = abs(p.y - yn);
-        g = over(vec4(u_red, 0.5 * exp(-dm / 26.0)), g);
-        g = over(vec4(mix(u_red, vec3(1.0, 0.45, 0.4), 0.35 * cov(dm - 5.0)), cov(dm - 14.0)), g);
+        vec3 mk = u_regen > 0.5 ? vec3(0.2, 0.75, 1.0) : u_red;     // iX Cluster: the regen blade's marker in eDrive blue
+        g = over(vec4(mk, 0.5 * exp(-dm / 26.0)), g);
+        g = over(vec4(mix(mk, vec3(1.0, 0.45, 0.4), 0.35 * cov(dm - 5.0) * (1.0 - u_regen)), cov(dm - 14.0)), g);
         c = vec4(g.rgb, g.a * inBand);
         c = over(vec4(0.93, 0.95, 0.98, cov(abs(d) - 1.6)), c);               // outer edge
         c = over(vec4(1.0, 1.0, 1.0, 0.3 * cov(abs(d - 4.0) - 0.6)), c);       // its bevel
@@ -1132,6 +1136,7 @@ uniform float u_highAt;
 uniform vec4 u_track;
 uniform float u_flash;
 uniform float u_wing;
+uniform float u_regen;     // iX Cluster: 1 while power flows into the battery (lit in eDrive blue)
 
 const float PI = 3.14159265359;
 
@@ -1157,6 +1162,7 @@ void main() {
     float a1 = clamp((fx) * rr + 0.5, 0.0, 1.0) * clamp((slot - gap - fx) * rr + 0.5, 0.0, 1.0);
     float fc = (i + 0.5) / u_segs;
     vec3 c = fc < u_midAt ? u_low : (fc < u_highAt ? u_mid : u_high);
+    if (u_regen > 0.5) c = vec3(0.2, 0.75, 1.0);
     bool lit = u_value > 0.0 && fc <= u_value + 0.5 / u_segs;
     if (lit && u_flash > 0.5) c = vec3(1.0);
     if (lit) gl_FragColor = vec4(c, edge * a1);
@@ -1621,6 +1627,7 @@ uniform float u_nseg;
 uniform vec4 u_tach;       // the rev counter: centre x, y, inner and outer radius of its segments
 uniform vec4 u_tachA;      // its start angle (deg, clockwise from 3 o'clock), sweep (deg), segments, revs 0..1
 uniform float u_redFrom;   // 0..1 of the rev counter
+uniform float u_regen;     // iX Cluster: 1 while power flows into the battery (lit in eDrive blue)
 uniform vec4 u_ring[4];    // the ring gauges: centre x, y, radius, value 0..1 (radius 0 = none)
 uniform vec3 u_ringC[4];   // their colours
 uniform vec4 u_bar[3];     // the middle bars: left x, y, width (0 = none), value 0..1
@@ -1701,6 +1708,7 @@ void main() {
                 bool red = mid >= u_redFrom;
                 vec3 off = red ? vec3(0.3, 0.05, 0.06) : TRACK;
                 vec3 lit = red ? RED : mix(GREY, WHITE, mid);
+                if (u_regen > 0.5) lit = vec3(0.2, 0.75, 1.0);
                 c = put(c, mid <= u_tachA.w ? lit : off, m);
                 // a thin ring inside, and a mark outside at every 1000
                 c = put(c, GREY * 0.8, cov(abs(r - (u_tach.z - 14.0)) - 0.7));

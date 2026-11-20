@@ -4,7 +4,7 @@
     uv run --no-project --with pillow python kit/tools/bake_ixcluster_fonts.py [--src DIR]
 
 The gear fonts gain B (the iX3's B position), the dial labels a minus sign (battery temperature -10 C) and
-Ribbon's readouts a slash (km/h). Same
+Ribbon's readouts a slash (km/h); M's small print K and W (kW). Same
 fonts, sizes and options as bimmer-lab's tools/bake_fonts.py (MIT), whose bake() is copied below unchanged, so cell
 heights and the layouts built on them stay the same. --src: the folder with the TTFs (bimmer-lab's tools/fonts-src;
 Barlow and Michroma, Outfit and Barlow Condensed under the SIL OFL 1.1, see apps/ixcluster/NOTICE). Runs on the Mac
@@ -28,6 +28,12 @@ FONTS = [
     ('b_gear', 'Outfit[wght].ttf', 32, DIGITS + 'PRNDSMB-', 0, 'SemiBold'),
     # Ribbon's readouts: '/' for km/h (tucked, so the cell height and the layout stay as they were)
     ('b_val', 'Outfit[wght].ttf', 44, DIGITS + '.:-+\u00b0% ' + LOWER + UPPER + '/', 0, 'Light', None, '/'),
+    ('gear', 'BarlowCondensed-Bold.ttf', 330, DIGITS + 'PRNDB-'),
+    ('m_gear', 'Orbitron[wght].ttf', 125, 'PRNDSMB-' + DIGITS, 3, 'Black', {'0': 'O'}),
+    ('y_gear', 'BarlowCondensed-Bold.ttf', 300, DIGITS + 'PRNDSMB-'),
+    # seven segments can't draw D or B either: d and b stand in, as r and n do
+    ('d7_gear', 'DSEG7Classic-Bold.ttf', 190, DIGITS + 'PRNDB-', 0, None, {'R': 'r', 'N': 'n', 'D': 'd', 'B': 'b'}),
+    ('m_tiny', 'Barlow-Medium.ttf', 26, LOWER + DIGITS + 'CFKW./ -\u00b0'),
     ('value', 'BarlowCondensed-Bold.ttf', 92, DIGITS + '.:- PRNDB\u00b0', 0, None, None, '\u00b0'),
 ]
 

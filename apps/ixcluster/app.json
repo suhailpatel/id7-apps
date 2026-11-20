@@ -1,8 +1,8 @@
 {
   "id": "ixcluster",
   "title": "iX Cluster",
-  "description": "Full-screen instrument cluster themes for the iX3: M view, Sport, Minimal, Cruise and Ribbon, with battery power and regen, charge level, battery temperature and electric range. G08 validation pending.",
-  "version": "0.1.1",
+  "description": "Full-screen instrument cluster themes for the iX3 (M view, Sport, Minimal, Cruise, Ribbon, GT3, M, Vector, Track, Drag, Rally, Retro 80s, Dyno), with battery power and regen, charge level, battery temperature, electric range, tyres and a 0-60 timer. G08 validation pending.",
+  "version": "0.1.2",
   "vendor": "custom",
   "loggingId": "OAXL",
   "iconGlyph": "gauge",
@@ -49,6 +49,20 @@
     "de.bmw.infrastructure.VehicleCondition": {
       "VehicleCondition": "s",
       "_optional": "the car switching off: no new layer while it does (cluster-render's switch-off guard)"
+    },
+    "de.bmw.infotainment.vehicle.TPMS": {
+      "statusTyrePressure": "rs",
+      "statusTyreTemperature": "rs",
+      "_optional": "Tyre pressure and temperature (Track and readouts); polled only while reads are allowed"
+    },
+    "de.bmw.infotainment.vehicle.Vehicle": {
+      "statusNewCurrentUnitsStatusExt": "rs",
+      "_optional": "the car's pressure and temperature units, for the tyre readouts"
+    },
+    "de.bmw.infotainment.hmi.hmimediastate.HmiMediaState": {
+      "playerMetadata": "rs",
+      "trackProgress": "rs",
+      "_optional": "now playing (title, artist, progress) in the Vector theme's music panel"
     }
   },
   "screens": [
@@ -96,6 +110,38 @@
           "Ribbon"
         ],
         [
+          "gt3",
+          "GT3"
+        ],
+        [
+          "m",
+          "M"
+        ],
+        [
+          "vector",
+          "Vector"
+        ],
+        [
+          "track",
+          "Track"
+        ],
+        [
+          "drag",
+          "Drag"
+        ],
+        [
+          "rally",
+          "Rally"
+        ],
+        [
+          "retro80s",
+          "Retro 80s"
+        ],
+        [
+          "dyno",
+          "Dyno"
+        ],
+        [
           "grid",
           "Calibration grid"
         ],
@@ -140,6 +186,38 @@
         [
           "ribbon",
           "Ribbon"
+        ],
+        [
+          "gt3",
+          "GT3"
+        ],
+        [
+          "m",
+          "M"
+        ],
+        [
+          "vector",
+          "Vector"
+        ],
+        [
+          "track",
+          "Track"
+        ],
+        [
+          "drag",
+          "Drag"
+        ],
+        [
+          "rally",
+          "Rally"
+        ],
+        [
+          "retro80s",
+          "Retro 80s"
+        ],
+        [
+          "dyno",
+          "Dyno"
         ]
       ]
     },
@@ -172,6 +250,38 @@
         [
           "ribbon",
           "Ribbon"
+        ],
+        [
+          "gt3",
+          "GT3"
+        ],
+        [
+          "m",
+          "M"
+        ],
+        [
+          "vector",
+          "Vector"
+        ],
+        [
+          "track",
+          "Track"
+        ],
+        [
+          "drag",
+          "Drag"
+        ],
+        [
+          "rally",
+          "Rally"
+        ],
+        [
+          "retro80s",
+          "Retro 80s"
+        ],
+        [
+          "dyno",
+          "Dyno"
         ]
       ]
     },
@@ -204,6 +314,38 @@
         [
           "ribbon",
           "Ribbon"
+        ],
+        [
+          "gt3",
+          "GT3"
+        ],
+        [
+          "m",
+          "M"
+        ],
+        [
+          "vector",
+          "Vector"
+        ],
+        [
+          "track",
+          "Track"
+        ],
+        [
+          "drag",
+          "Drag"
+        ],
+        [
+          "rally",
+          "Rally"
+        ],
+        [
+          "retro80s",
+          "Retro 80s"
+        ],
+        [
+          "dyno",
+          "Dyno"
         ]
       ]
     },
@@ -221,11 +363,11 @@
       "options": [
         [
           "us",
-          "mph, \u00b0F"
+          "mph, \u00b0F, psi"
         ],
         [
           "metric",
-          "km/h, \u00b0C"
+          "km/h, \u00b0C, bar"
         ]
       ]
     },
@@ -438,6 +580,70 @@
         [
           "off",
           "Off"
+        ]
+      ]
+    },
+    {
+      "key": "gFlipLat",
+      "label": "G-meter: swap left / right",
+      "type": "bool",
+      "default": false
+    },
+    {
+      "key": "gFlipLong",
+      "label": "G-meter: brake on top",
+      "type": "bool",
+      "default": false
+    },
+    {
+      "key": "gRange",
+      "label": "G-meter range",
+      "type": "choice",
+      "default": 1.2,
+      "options": [
+        [
+          0.8,
+          "0.8 g"
+        ],
+        [
+          1.0,
+          "1.0 g"
+        ],
+        [
+          1.2,
+          "1.2 g"
+        ],
+        [
+          1.5,
+          "1.5 g"
+        ],
+        [
+          2.0,
+          "2.0 g"
+        ]
+      ]
+    },
+    {
+      "key": "gTrail",
+      "label": "G-meter trail",
+      "type": "choice",
+      "default": 2,
+      "options": [
+        [
+          0,
+          "Off"
+        ],
+        [
+          1,
+          "1 s"
+        ],
+        [
+          2,
+          "2 s"
+        ],
+        [
+          4,
+          "4 s"
         ]
       ]
     },

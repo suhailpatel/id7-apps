@@ -2,7 +2,7 @@
 """iX Cluster's theme pictures for its centre-screen page (apps/ixcluster/previews.js reads them).
 
     BENCH_SHOT=1 BENCH_PORT=8092 node kit/bench/server.js ixcluster      # one terminal (the frame held still)
-    uv run -q --no-project --with pillow python -I kit/tools/ixcluster_previews.py 8092
+    uv run -q --no-project --with pillow python -I kit/tools/ixcluster_previews.py 8092 [theme ...]
 
 Each theme is picked on the bench, shot by headless Chrome at 1920x720 (the car view off) and stored as
 apps/ixcluster/hud/previews/<theme>.json = { big, small: {w, h, z} }, z = base64 of the zlib-deflated RGBA rows,
@@ -14,7 +14,7 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT = os.path.join(ROOT, 'apps', 'ixcluster', 'hud', 'previews')
 CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-THEMES = ['mview', 'sport', 'minimal', 'cruise', 'ribbon']
+THEMES = ['mview', 'sport', 'minimal', 'cruise', 'ribbon', 'gt3', 'm', 'vector', 'track', 'drag', 'rally', 'retro80s', 'dyno']
 BIG, SMALL = (888, 333), (280, 105)
 
 
@@ -48,11 +48,12 @@ def pack(img, size):
 
 def main():
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8092
+    only = sys.argv[2:]          # theme names: just those pictures
     tmp = os.path.join(OUT, '..', '..', '..', '..', 'dist', 'ixcluster-previews')
     os.makedirs(tmp, exist_ok=True)
     post(port, 'demo', 'on')
     post(port, 'byMode', False)       # else the held drive mode (Comfort) picks the theme
-    for name in THEMES:
+    for name in [t for t in THEMES if not only or t in only]:
         post(port, 'hudLayout', name)
         time.sleep(5)
         png = os.path.join(tmp, name + '.png')

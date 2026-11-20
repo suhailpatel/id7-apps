@@ -16,6 +16,8 @@
  *
  * Tokens: {{evgear}} (P R N D, B while the B position is on; also for {{gear}} {{gearnum}} {{stage}})
  *   {{kw}} (signed) {{kwAbs}} {{flow}} (POWER, REGEN with the car moving, else '') {{kwText}} (POWER 42 kW) {{soc}} {{batt}} (display unit)
+ *   {{regenKw}} (kW into the battery, 0 otherwise) {{pwrPct}} (% of the display scale) {{kwPeak}} (most kW out since the
+ *   last 0-60 run started)
  *   {{pwr:i/n}} (scale label i of n, kW) {{u:power}} (kW) {{fuelPct}} = {{soc}}; {{oil}} = {{batt}}
  * Plain Node 8 (the car's 8.16.2).
  */
@@ -52,10 +54,20 @@ function raw(h, name) {
         case 'pwr': return isNum(d.kw) ? frac(h, Math.max(0, d.kw), 8) : null;
         case 'regen': return isNum(d.kw) ? frac(h, Math.max(0, -d.kw), 8) : null;
         case 'range': return isNum(d.rangeKm) ? d.rangeKm : null;
+        case 'regenKw': return isNum(d.kw) ? Math.max(0, -d.kw) : null;
+        case 'kwPeak': { const v = d.demo ? h.kwPeakDemo : h.kwPeakRun; return isNum(v) ? v : null; }
+        case 'avgSpeed': return h._avgSpeed ? h._avgSpeed() : null;
         case 'ambient': return d.demo ? 12 : isNum(h.ambient) && Date.now() - (h.ambientAt || 0) < AMBIENT_MS ? h.ambient : null;
         case 'rpm': case 'boost': case 'coolant': case 'intake': case 'torque': case 'torquePct': case 'powerPct': case 'hvSoc':
             return null;
-        default: return undefined;
+        default:
+            if (name.indexOf('seg3:') === 0) {      // a 3-step level (the M theme's step bars): 1..3, 0 unknown or none
+                const k = name.slice(5), kw = d.kw;
+                const f = k === 'pwr' ? (isNum(kw) && kw > 0 ? frac(h, kw, 8) : null) : k === 'regen' ? (isNum(kw) && kw < 0 ? frac(h, -kw, 8) : null)
+                    : k === 'soc' ? (isNum(d.soc) ? d.soc / 100 : null) : k === 'batt' ? (isNum(d.battT) ? (d.battT + 10) / 60 : null) : null;
+                return isNum(f) && f > 0 ? Math.max(1, Math.min(3, Math.ceil(f * 3))) : 0;
+            }
+            return undefined;
     }
 }
 
@@ -88,6 +100,9 @@ function token(h, tok) {
         }
         case 'soc': case 'fuelPct': return isNum(d.soc) ? String(Math.round(d.soc)) : '--';
         case 'batt': case 'oil': return temp(d.battT);
+        case 'regenKw': return isNum(d.kw) ? String(Math.round(Math.max(0, -d.kw))) : '--';
+        case 'pwrPct': return isNum(d.kw) ? String(Math.round(frac(h, Math.abs(d.kw), 8) * 100)) : '--';
+        case 'kwPeak': { const v = d.demo ? h.kwPeakDemo : h.kwPeakRun; return isNum(v) ? String(Math.round(v)) : '--'; }
         case 'u:power': return 'kW';
         case 'u:powerUc': return 'KW';
         case 'mode': return undefined;

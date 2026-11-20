@@ -26,8 +26,10 @@ mgu.run({
         hud.start();
         new Page(ctx, hud, {
             title: ctx.spec.title, what: 'cluster',
-            look: { name: 'Themes', style: 'hero', tags: { mview: 'power + speed', sport: 'Live Cockpit', minimal: 'just the speed', cruise: 'calm · trip', ribbon: 'calm · holidays' } },
-            tabs: ['look', 'map', 'badge', 'settings'],
+            look: { name: 'Themes', style: 'hero', tags: { mview: 'power + speed', sport: 'Live Cockpit', minimal: 'just the speed', cruise: 'calm · trip', ribbon: 'calm · holidays',
+                gt3: 'race dash', m: 'M8 style', vector: 'music panel', track: 'tyres + temps', drag: '0-60 timer', rally: 'power arc · G-meter',
+                retro80s: '80s digital', dyno: 'readout tiles' } },
+            tabs: ['look', 'readouts', 'map', 'badge', 'gmeter', 'settings'],
             settings: ['units', 'clock', 'timeZone', 'nightDim', 'cameraNotch', 'holiday', 'demo'],
             modeCheck: ['HMI'],
             onUse: () => hud.car.touch(),

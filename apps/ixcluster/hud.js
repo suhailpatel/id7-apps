@@ -285,8 +285,9 @@ const DEMO_AMBER = [255, 176, 40];      // the DEMO tag's colour
 const CAL_LAYOUTS = { grid: true, wincal: true, mapcal: true };
 // iX Cluster: the engine settings Cluster Themes had, at fixed values (no engine: shift lights, oil / boost warnings off)
 const ENGINE_FIXED = { redline: 7000, shiftBefore: 300, coldGuard: false, shiftCue: 'rpm', smartTemps: false, showBoost: false,
-    warnOil: 0, warnCoolant: 0, warnBoost: 0, gRange: 1.2, gTrail: 2, gFlipLat: false, gFlipLong: false };
-const POWER_STEPS = { mview: 8, sdash: 7, ribbon: 7 };   // numbered steps on each theme's power scale (evtokens.js)
+    warnOil: 0, warnCoolant: 0, warnBoost: 0 };
+const POWER_STEPS = { mview: 8, sdash: 7, ribbon: 7, bar: 7, mtach: 7, vdash: 8 };
+const EV_LIGHTS = true;                                 // shift lights show power (lights widget)   // numbered steps on each theme's power scale (evtokens.js)
 const REGEN_RGB = [0.2, 0.75, 1.0];                    // power into the battery: the needle, band and ribbon in eDrive blue
 // sharing the HUD with other kit apps (Redline, issue #4): kit/runtime/hud_claim.js, from cauliflowermossgrape's kit
 // (MIT). HUD Widgets is a "standing" app, like Cluster functions: it gives way while another app holds a fresh
@@ -311,6 +312,7 @@ const TEXT_MS = 200;             // text re-draws at most 5 times a second (what
 const TARGET_SIZES = { hud: [800, 480], panel: [1920, 720] };
 const MODE_KEY = { comfort: 'inComfort', sport: 'inSport', eco: 'inEco' };
 const TYRE_CORNERS = ['FL', 'FR', 'RL', 'RR'];
+const TYRE_MS = 60000;
 // the HUD's place (the page's Position tab): settings that move / scale the layers already there, no rebuild
 const PLACE_KEYS = ['hudX', 'hudY', 'hudScale'];
 // (0.17.4: "Leave BMW's bottom strip clear" is gone. Since 0.17.0 every cluster theme ends above BMW's strip anyway;
@@ -339,6 +341,10 @@ const TILE_BAR = {
     ambient: { raw: 'ambient', min: -20, max: 45 }, gLat: { raw: 'gLat', min: 0, max: 1.2, z: 1, abs: true },
     gLong: { raw: 'gLong', min: 0, max: 1.2, z: 1, abs: true }, fuel: { raw: 'fuel', min: 0, max: 1 },
     range: { raw: 'range', min: 0, max: 700 }, hvSoc: { raw: 'hvSoc', min: 0, max: 100 },
+    // iX Cluster's sensors (sensors.js): zoned bars run blue, dark blue, red past the theme's split
+    kw: { raw: 'pwr', min: 0, max: 1, z: 1 }, regenKw: { raw: 'regen', min: 0, max: 1 }, pwrPct: { raw: 'pwr', min: 0, max: 1, z: 1 },
+    kwPeak: { raw: 'kwPeak', min: 0, max: 'kwScale', z: 1 }, soc: { raw: 'soc', min: 0, max: 100 },
+    batt: { raw: 'batt', min: -10, max: 50, z: 1 }, avgSpeed: { raw: 'avgSpeed', min: 0, max: 160 },
 };
 const TILE_MAX = 14;       // half a flash: red, then the normal colour
 // widgets that show the shift cue (the reaction time is learned only while one of them is drawn)
@@ -517,7 +523,7 @@ class HudApp {
         this.needsFuel = false;          // a shown widget uses the fuel level
         this.boostPeak = null;           // bar, the highest boost since the last 0-60 run started ({{boostPeak}})
         this.runs = new Runs(ctx.dataDir, this.log);   // the 0-60 timer (runs.js)
-        this.runs.onStart = () => { this.boostPeak = null; };
+        this.runs.onStart = () => { this.boostPeak = null; this.kwPeakRun = null; this.kwPeakDemo = null; };
         this.tripKm = 0;                 // this drive (since the app started with the car): km driven and
         this.tripMs = 0;                 // ms moving, for {{avgSpeed}}
         this.tripT = 0;
@@ -727,6 +733,21 @@ class HudApp {
                     this.ambientAt = Date.now();
                 },
             },
+            // tyre pressure and temperature per corner, in the car's own display units (_tyreBar / _tyreC); the car only
+            // answers reads, so they are polled (evcar.js: only while reads are allowed)
+            'de.bmw.infotainment.vehicle.TPMS': {
+                statusTyrePressure: (v) => { this.tyresAt.p = Date.now(); TYRE_CORNERS.forEach((k) => { this.tyres.p[k] = this._tyreBar(v && v['actualValuePressureTyre' + k + 'H']); }); },
+                statusTyreTemperature: (v) => { this.tyresAt.t = Date.now(); TYRE_CORNERS.forEach((k) => { this.tyres.t[k] = this._tyreC(v && v['actualValueTemperatureTyre' + k + 'H']); }); },
+            },
+            // the car's display units: TPMS pressure is 0.1 x raw in the car's pressure unit, temperature the car's degrees + 40
+            'de.bmw.infotainment.vehicle.Vehicle': {
+                statusNewCurrentUnitsStatusExt: (v) => {
+                    const press = unitName(PRESS_UNITS, v && v.unitOfMeasurementAirPressure), temp = unitName(TEMP_UNITS, v && v.unitOfMeasurementTemperature);
+                    if (press === this.carUnits.press && temp === this.carUnits.temp) return;
+                    this.carUnits.press = press; this.carUnits.temp = temp;
+                    this.log.info('car units: pressure ' + (press || '?') + ', temperature ' + (temp || '?'));
+                },
+            },
             'de.bmw.infotainment.drivingexcitement.FES': {
                 statusFESVehicleDynamicSwitchHMI: (v) => {
                     this._diag('HMI', v);
@@ -742,6 +763,12 @@ class HudApp {
                 },
             },
         };
+        // now playing (Vector's music panel): the head unit's own media state, front screen only (optional in app.json)
+        extra[MEDIA_IF] = {
+            playerMetadata: (v) => this._mediaFeed('meta', v),
+            trackProgress: (v) => this._mediaFeed('progress', v),
+        };
+        this.tyresAt = { p: 0, t: 0 };
         this.car = new EvCar(this.ctx, extra);
         // Cluster Themes' scripted "Play demo" drive is an engine show: not part of iX Cluster (the explicit
         // "Demo data" setting drives the EV demo instead). This stand-in keeps the engine's checks working.
@@ -1318,6 +1345,12 @@ class HudApp {
         return isNum(lim) && lim > 0 && isNum(v) && v > lim ? id : null;
     }
 
+    /** iX Cluster: |kW| as 0..1 of the display scale of `steps` numbered steps, and whether power flows in (regen). */
+    _pwr(steps) {
+        const kw = this._raw('kw');
+        return { v: isNum(kw) ? evtokens.frac(this, Math.abs(kw), steps) : 0, regen: isNum(kw) && kw < -0.5 ? 1 : 0 };
+    }
+
     _barMax(w) { return Math.ceil(this.setting('redline') / 1000) * 1000 + ((w && w.over) || 0); }
 
     /** The shift point now ({ rpm, cold }) and whether the rpm is at or past it. */
@@ -1332,7 +1365,7 @@ class HudApp {
     }
 
     /** The shift lights count in (setting "shiftCue" on "countin", the default), else the fixed rpm band. */
-    _countIn() { return !this.ctx.settings.item('shiftCue') || this.setting('shiftCue') !== 'rpm'; }
+    _countIn() { return false; }      // iX Cluster: no shift cue (no engine)
 
     /** Every tick: the count-in cue from the rpm (the test's while it runs) and the reaction time (shift_cue.js). */
     _cueTick(now) {
@@ -1383,7 +1416,8 @@ class HudApp {
 
     _tyre(kind, corner) {
         const v = this.tyres[kind][corner];
-        if (isNum(v)) return v;
+        // iX Cluster: a TPMS reading (polled every 15 s while reads are allowed) is kept TYRE_MS, then unknown
+        if (isNum(v) && Date.now() - ((this.tyresAt || {})[kind] || 0) < TYRE_MS && !this.car.data().demo) return v;
         if (!this.car.data().demo) return null;
         const rear = corner === 'RL' || corner === 'RR';
         return kind === 'p' ? (rear ? 2.5 : 2.3) : (rear ? 27 : 24);
@@ -2402,11 +2436,12 @@ class HudApp {
         this._cueTick(now);
         if (now - (this.bumpAt || 0) >= 1000) { this.bumpAt = now; smartTemps.bumpTick(this); }
         // the 0-60 timer only on the car's own data (the demo drive would set a best time)
-        // (iX Cluster: no 0-60 runs are timed or saved)
+        if (!this.car.data().demo) this.runs.update(this.car.data().speed, now, this.setting('units') === 'us' ? 'us' : 'metric');
         this._trip(now);
         this._gTick(now);
-        const b = this._boost();
-        if (isNum(b) && (!isNum(this.boostPeak) || b > this.boostPeak)) this.boostPeak = b;
+        // iX Cluster: the most power out since the last 0-60 run started ({{kwPeak}}), live and demo apart
+        const kw = this._raw('kw'), pk = this.car.data().demo ? 'kwPeakDemo' : 'kwPeakRun';
+        if (isNum(kw) && kw > 0 && (!isNum(this[pk]) || kw > this[pk])) this[pk] = kw;
         if (!this.client.ready) return;
         // shift light: blink the whole bar at 8 Hz once the rpm reaches the redline
         const rpm = this._raw('rpm');
@@ -2452,6 +2487,10 @@ class HudApp {
             x.last = s; x.lastPaint = now;
             x.c.uniform(x.ref, 'u_text', this._atlasCodes(x, s), { type: 'vec4' });
         } else if (w.type === 'nav') this._navUpdate(x, now, force);
+        else if (w.type === 'scale') {
+            // iX Cluster: the power scale grew (a new peak): its numbers again
+            if (evtokens.scaleKw(this, this._barMax(w) / 1000) !== x.scaleKw) this._paintScale(x);
+        }
         else if (w.type === 'garland') this._garlandTick(x, now);
         else if (w.type === 'text') {
             if (!force && now - x.lastPaint < (w.rate || TEXT_MS)) return;
@@ -2521,7 +2560,7 @@ class HudApp {
                     if (bar) {
                         let raw = this._raw(bar.raw);
                         if (bar.abs && isNum(raw)) raw = Math.abs(raw);
-                        const max = bar.max === 'rpm' ? this._barMax() : bar.max;
+                        const max = bar.max === 'rpm' ? this._barMax() : bar.max === 'kwScale' ? evtokens.scaleKw(this, 8) : bar.max;
                         v = isNum(raw) ? Math.round(Math.min(1, Math.max(0, (raw - bar.min) / (max - bar.min))) * 200) / 200 : 0;
                         z = bar.z ? 1 : 0;
                     }
@@ -2577,13 +2616,13 @@ class HudApp {
             x.c.uniform(x.ref, 'u_value', [q]);
             x.c.uniform(x.ref, 'u_flash', [this.flash ? 1 : 0]);
         } else if (w.type === 'shiftbar' || w.type === 'revarc') {
-            const rpm = this._raw('rpm');
-            const segs = w.segments || (w.type === 'revarc' ? 30 : 40);
-            const v = isNum(rpm) ? Math.min(1, Math.max(0, rpm / this._barMax())) : 0;
-            const q = Math.round(v * segs * 2) / (segs * 2);        // only resend on half-segment steps
-            const key = q + (this.flash ? 'f' : '');
+            // iX Cluster: battery power on the display scale (the scale widgets' 7 steps), eDrive blue while recuperating
+            const segs = w.segments || (w.type === 'revarc' ? 30 : 40), P = this._pwr(POWER_STEPS.bar);
+            const q = Math.round(P.v * segs * 2) / (segs * 2);        // only resend on half-segment steps
+            const key = q + (this.flash ? 'f' : '') + P.regen;
             if (!force && key === x.last) return;
             x.last = key;
+            x.c.uniform(x.ref, 'u_regen', [P.regen]);
             x.c.uniform(x.ref, 'u_value', [q]);
             x.c.uniform(x.ref, 'u_flash', [this.flash ? 1 : 0]);
         } else if (w.type === 'arc' || w.type === 'meter') {
@@ -2592,7 +2631,7 @@ class HudApp {
             if (w.slot) {
                 const sn = this.slotSensor(this.activeName, w.slot, this.layoutSlots);
                 const bar = sn ? TILE_BAR[sn.id] : null;
-                sig = bar ? bar.raw : null; mn = bar ? bar.min : 0; mx = bar ? (bar.max === 'rpm' ? this._barMax() : bar.max) : 1; ab = !!(bar && bar.abs);
+                sig = bar ? bar.raw : null; mn = bar ? bar.min : 0; mx = bar ? (bar.max === 'rpm' ? this._barMax() : bar.max === 'kwScale' ? evtokens.scaleKw(this, 8) : bar.max) : 1; ab = !!(bar && bar.abs);
             }
             let raw = sig ? this._raw(sig) : null;
             if (ab && isNum(raw)) raw = Math.abs(raw);
@@ -2638,14 +2677,15 @@ class HudApp {
         } else if (w.type === 'vdash') {
             const T = w.tach, q = (v) => Math.round(Math.min(1, Math.max(0, v)) * 400) / 400;
             const frac = (g) => { const v = g && g.signal ? this._raw(g.signal) : null; return isNum(v) ? q((v - g.min) / (g.max - g.min)) : 0; };
-            const rpm = this._raw('rpm');
+            const P = this._pwr(POWER_STEPS.vdash), rpm = P.v * VDASH_RPM;   // iX Cluster: power on the round counter
             const rings = [0, 1, 2, 3].map((i) => (w.rings || [])[i]), bars = [0, 1, 2].map((i) => (w.bars || [])[i]);
             const rv = rings.map(frac), bv = bars.map(frac);
             const on = this._mediaOn() ? 1 : 0, e = this._mediaElapsed();
             const pv = on && e !== null && this.media.total > 0 ? q(e / this.media.total) : 0;
-            const key = [isNum(rpm) ? q(rpm / VDASH_RPM) : 0].concat(rv, bv, [on, pv, this.setting('mapUp') ? 1 : 0]).join('|');
+            const key = [isNum(rpm) ? q(rpm / VDASH_RPM) : 0].concat(rv, bv, [on, pv, this.setting('mapUp') ? 1 : 0, P.regen]).join('|');
             if (!force && key === x.last) return;
             x.last = key;
+            x.c.uniform(x.ref, 'u_regen', [P.regen]);
             x.c.uniform(x.ref, 'u_tachA', [T[4], T[5], T[6], isNum(rpm) ? q(rpm / VDASH_RPM) : 0]);
             const ru = [], bu = [];
             rings.forEach((g, i) => ru.push(g ? g.cx - w.x : 0, g ? g.cy - w.y : 0, g ? g.r : 0, rv[i]));
@@ -2688,13 +2728,15 @@ class HudApp {
             vals.forEach(([u, G, v]) => x.c.uniform(x.ref, u, [G.cx || 0, G.cy || 0, G.r || 0, v]));
             x.c.uniform(x.ref, 'u_segLit', lit);
         } else if (w.type === 'mtach') {
-            const rpm = this._raw('rpm'), sp = this._shift();
-            const v = isNum(rpm) ? Math.min(1, Math.max(0, rpm / (w.max || 8000))) : 0;
-            const key = Math.round(v * 600) + '|' + sp.now;
+            // iX Cluster: power out on a blade with signal "pwr", power in on one with "regen" (both on the display scale)
+            const P = this._pwr(POWER_STEPS.mtach), side = w.signal === 'regen' ? P.regen : !P.regen;
+            const v = side ? P.v : 0;
+            const key = Math.round(v * 600) + '|' + P.regen;
             if (!force && key === x.last) return;
             x.last = key;
             x.c.uniform(x.ref, 'u_value', [v]);
-            x.c.uniform(x.ref, 'u_shiftNow', [sp.now ? 1 : 0]);
+            x.c.uniform(x.ref, 'u_shiftNow', [0]);
+            x.c.uniform(x.ref, 'u_regen', [w.signal === 'regen' ? 1 : 0]);   // the regen blade is always eDrive blue
         } else if (w.type === 'segbar') {
             const v = this._raw(w.signal);
             const lit = isNum(v) ? Math.max(0, Math.min(w.max, Math.round(v))) : 0;
@@ -2715,7 +2757,11 @@ class HudApp {
         } else if (w.type === 'lights') {
             const rpm = this._raw('rpm'), sp = this._shift(), n = this._wings(w) ? Math.ceil((w.count || 12) / 2) : w.count || 12;
             let lit, strobe;
-            if (this._countIn()) {
+            if (EV_LIGHTS) {
+                // iX Cluster: the lights fill with power out on the display scale; no strobe (no shift point)
+                const P = this._pwr(POWER_STEPS.bar);
+                lit = P.regen ? 0 : Math.floor(P.v * n + 0.0001); strobe = 0;
+            } else if (this._countIn()) {
                 // the count-in: lit over the cue's span up to its flash point, then all red at 5 Hz while it is latched
                 lit = Math.floor(this.cue.fraction(rpm) * n);
                 strobe = this.cue.now.shift ? (this.cue.blink(now) ? 1 : 0) : 0;
@@ -2843,13 +2889,15 @@ class HudApp {
         const bar = (this.shown || []).filter((b) => b.type === 'shiftbar' && b.x === w.x && b.w === w.w && b.y < w.y)
             .sort((a, b) => b.y - a.y)[0];
         if (bar && this._wings(bar)) { this._blit(x, null, Buffer.alloc(w.w * w.h * 4, 0)); return; }
+        const kwTop = evtokens.scaleKw(this, n - 1);      // iX Cluster: the power scale's labels in kW
+        x.scaleKw = kwTop;
         for (let i = 0; i < n; i++) {
-            const label = String(i);
+            const label = String(Math.round(i * kwTop / (n - 1)));
             const lw = textRaster.measure(label, w.font, 0);
             const cx = i / (n - 1) * w.w;
             const left = Math.round(Math.max(0, Math.min(w.w - lw, cx - lw / 2)));
             const one = textRaster.mask(w.w, w.h, label, { font: w.font, x: left });
-            const into = w.redFrom && i * 1000 >= red ? hot : m;
+            const into = m;            // (no red numbers: a power scale has no redline)
             for (let k = 0; k < m.length; k++) if (one[k] > into[k]) into[k] = one[k];
         }
         const buf = textRaster.tint(m, w.w, w.h, { color: color(this.theme, w.color || 'dim'), font: w.font });

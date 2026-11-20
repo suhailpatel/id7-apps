@@ -631,3 +631,12 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
   (`SIXL`), requiring `cluster-render >= 0.5.4` like iX Pulse; ships the MPL 2.0 text
   beside the cluster-render client. iX Cluster `0.1.1`. Store package smoke-tested;
   no release, push or installation.
+- User asked to port the remaining eight themes. iX Cluster `0.1.2` adds GT3, M,
+  Vector, Track, Drag, Rally, Retro 80s and Dyno. Rev bars, shift lights, the rev
+  arc, M blades (left power, right regen) and Vector's counter follow power on the
+  display scale; regen draws eDrive blue; no shift point, flash or redline.
+  Readout slots use EV sensors (sensors.js); new Readouts and G-meter tabs. TPMS
+  (60 s expiry, read only while active), now playing and the 0-60 timer (live data
+  only; best time saved) are back. Gear fonts gained B (seven-segment uses d/b), M's
+  small print K/W. All 13 themes and the page tabs were rendered and reviewed;
+  test_ixcluster.js covers every theme's tokens, glyphs, slots and signals.
