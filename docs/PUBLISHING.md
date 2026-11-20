@@ -7,31 +7,24 @@ revision `fc79a75f07f364c69165dec830f2fa4553ff20e4`, on 11 November 2026.
 
 | App | Store ID | Local development ID |
 | --- | --- | --- |
-| iXDrive | `suhailpatel_ixdrive` | `ixdrive` |
-| iXCharge | `suhailpatel_ixcharge` | `ixcharge` |
 | TyreWatch | `suhailpatel_tyrewatch` | `tyrewatch` |
-| Trip Capsule | `suhailpatel_tripcapsule` | `tripcapsule` |
-| iX Observatory | `suhailpatel_ixobservatory` | `ixobservatory` |
-| iX Pulse | `suhailpatel_ixpulse` | `ixpulse` |
-| iX Service | `suhailpatel_ixservice` | `ixservice` |
 | iX Cluster | `suhailpatel_ixcluster` | `ixcluster` |
 
 The display names and icons stay the same. Store editions have separate settings,
 history, RHMI identities and logging IDs. Existing development installs retain
 their data; installing a Store edition does not migrate that data.
 
-All eight declare **ID7 only**, demo off and no internet requirement. iXDrive and
-Trip Capsule default to miles. Trip Capsule requires the Store edition of iXDrive
-and reads its fresh journey summaries while both apps run. It does not import
-journeys from a development install. Shared files use the installed iXDrive ID:
-`/tmp/mgu-<id>.json` and `/tmp/mgu-<id>-trips.json`.
+Both declare **ID7 only**, demo off and no internet requirement.
 
-iX Pulse requires `cluster-render >= 0.5.4` for its experimental HUD/cluster
-outputs, both off by default. iX Cluster requires the same version; it draws
-its themes on the cluster once installed (BMW's own cluster with the theme Off), and
-its NOTICE carries Cluster Themes' MIT, cluster-render client MPL-2.0 and font OFL notices. Its centre-screen dashboard is independent of
-iXDrive. The projection client carries its MPL-2.0 licence and notice inside
-`javascript/`; the rest of the package retains the existing licences.
+iX Cluster requires `cluster-render >= 0.5.4`. It draws its themes on the cluster
+once installed (pick **Off** for BMW's own cluster). Its NOTICE carries Cluster
+Themes' MIT, the cluster-render client's MPL-2.0 and the fonts' OFL notices, and
+the full MPL-2.0 text sits beside the client in `javascript/`; the rest of the
+package retains the existing licences.
+
+iXDrive, iXCharge, iX Observatory, iX Pulse, iX Service and Trip Capsule were
+removed on 20 November 2026 and are no longer offered. Installed copies are not
+uninstalled by this; remove them in MGU Store if wanted.
 
 ## Prepare and check
 
@@ -47,10 +40,10 @@ Store descriptions and dependency versions are in `kit/tools/build_store.py`.
 New scaffolded apps are not offered until added there. `npm run store:check`
 checks for stale generated files without changing them.
 
-`build:store` writes seven complete OAP `.tgz` packages, seven icons, `catalog.json`
+`build:store` writes two complete OAP `.tgz` packages, two icons, `catalog.json`
 and `mgu-store.json` to `dist/store/`. It never reads or copies `oap-sdk/`, even
-when one is present locally. Packages include ID7 UI resources, the iXDrive
-widget, original licence notices and font notices. MGU Store supplies the SDK
+when one is present locally. Packages include ID7 UI resources, original licence
+notices and font notices. MGU Store supplies the SDK
 from the owner's head unit during installation.
 
 Ordinary `npm run build` packages in `dist/` contain the owner's SDK and must
@@ -61,7 +54,7 @@ not installable. All build outputs remain ignored by Git.
 
 After reviewing and committing the changes, push them to
 `suhailpatel/id7-apps`. In MGU Store, add that GitHub repository and choose its
-branch channel. The root `mgu-repo.json` lists the seven apps and instructs the
+branch channel. The root `mgu-repo.json` lists the two apps and instructs the
 Store to build each from source, without network access or SDK extraction.
 
 The Store installs its Python tool for source builds. Each app requires
@@ -72,8 +65,7 @@ also depends on a separately installed HMI controller gate; verify touch, dial,
 BACK and settings on the target car before calling the apps vehicle-tested.
 
 The builder accepts the Store's installed ID and folder arguments, including a
-collision rename. Trip Capsule targets the canonical `suhailpatel_ixdrive`
-companion; pairing with a collision-renamed iXDrive is not automatic.
+collision rename.
 
 ## Publish built packages with a catalog
 
@@ -97,7 +89,7 @@ needs asset API URLs assigned after uploading, as described in the upstream guid
 
 Use the catalog or branch layout, rather than uploading loose packages alone:
 the Store version checked here does not import app `requires` from loose package
-metadata. The catalog preserves renderer and Trip Capsule dependencies. Do not
+metadata. The catalog preserves the renderer dependency. Do not
 replace a published version's package; bump the app version and rebuild.
 
 ## Validation and remaining car checks
@@ -105,7 +97,7 @@ replace a published version's package; bump the app version and rebuild.
 `npm test` builds in a temporary checkout with a dummy SDK present, inspects
 archives, checks hashes, identities, dependencies, notices, icons and UI
 resources, and runs every packaged app's pages with stubbed vehicle transport.
-It also checks demo isolation, companion pairing and collision-renamed iXDrive.
+It also checks demo isolation and a collision-renamed iX Cluster build.
 
 To run those checks with the head unit's JavaScript version:
 
@@ -117,8 +109,9 @@ CI runs the package checks on Node 8.16.2 and uploads SDK-free build artifacts.
 The local packages and repository listing were also accepted by MGU Store's
 actual catalog/package parser and collision-renaming code at the revision above.
 
-No installation has been performed. G08 diagnostic candidates, TPMS mapping,
-SDK donor injection, renderer/controller behaviour, parked polling and saved
-history across real journeys still need testing on the car. Listings describe
+iX Cluster's first car install was refused over a SOME/IP instance (fixed in
+0.1.3; `check_signals.py` now checks instances). G08 diagnostic candidates, TPMS
+mapping, SDK donor injection, renderer/controller behaviour, cluster placement and
+parked polling still need testing on the car. Listings describe
 unvalidated telemetry accordingly; software checks do not establish vehicle
 compatibility. iDrive 8/9 support is not claimed.

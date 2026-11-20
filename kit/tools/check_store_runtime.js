@@ -24,7 +24,6 @@ Module._load=function(req,parent,main){
 global.setInterval=(fn,ms)=>{timers.push({fn,ms});return {unref(){}};};
 global.setTimeout=()=>({unref(){}});
 const opts={};spec.settings.forEach(s=>{opts[s.key]=s.default;});
-if(/ixdrive\d*$/.test(spec.id))opts.diagPage=true;
 const Recorder=require(path.join(kit,'record')).Recorder;
 const ctx={spec,dataDir,
     settings:{get:k=>opts[k],onChange:fn=>changes.push(fn),item:k=>spec.settings.find(s=>s.key===k)||null,
@@ -45,7 +44,7 @@ async function main(){
     for(const setting of ['off','on']){
         opts.demo=setting;changes.forEach(fn=>fn('demo'));
         // Exercise every page and its drawing helpers, not only module parsing.
-        const count=/ixdrive\d*$/.test(spec.id)?6:/(ixobservatory|ixcharge|ixservice)\d*$/.test(spec.id)?3:2;
+        const count=2;
         for(let i=0;i<count;i++){
             texts.length=0;
             if(ctx.tab)await ctx.tab(i);
@@ -54,49 +53,10 @@ async function main(){
             assert(!texts.some(s=>/NaN|Infinity/.test(s)),'finite display values');
         }
     }
-    if(/ixdrive\d*$/.test(spec.id)){
-        const name='/tmp/mgu-'+spec.id+'-trips.json';
-        assert(shared[name],'journey output uses installed ID');
-        assert.strictEqual(JSON.parse(shared[name]).sourceId,spec.id);
-        assert(!shared['/tmp/mgu-ixdrive-trips.json'],'Store edition leaves developer transport alone');
-        const legacy='/tmp/mgu-'+spec.id+'-legacy-charges.json';
-        assert.strictEqual(JSON.parse(shared[legacy]).sourceId,spec.id);
-        assert(!shared['/tmp/mgu-ixdrive-legacy-charges.json'],'migration also uses installed ID');
-        timers.filter(t=>t.ms===5000).forEach(t=>t.fn());
-        assert.strictEqual(JSON.parse(shared[name]).demo,true,'demo cannot publish real records');
-    }
-    if(/tripcapsule\d*$/.test(spec.id)){
-        opts.demo='off';changes.forEach(fn=>fn('demo'));
-        const sourceId=spec.config.journeySource;
-        assert.strictEqual(sourceId,'suhailpatel_ixdrive');
-        const packet={version:1,t:Date.now(),source:'ixdrive',sourceId,demo:false,journeys:[]};
-        shared['/tmp/mgu-'+sourceId+'-trips.json']=JSON.stringify(packet);
-        timers.forEach(t=>t.fn());texts.length=0;await ctx.frame();
-        assert(texts.indexOf('IXDRIVE CONNECTED')>=0,'imports correct Store companion');
-        packet.sourceId='ixdrive';shared['/tmp/mgu-'+sourceId+'-trips.json']=JSON.stringify(packet);
-        timers.forEach(t=>t.fn());texts.length=0;await ctx.frame();
-        assert(texts.indexOf('SAVED CARDS')>=0,'rejects other installation identities');
-    }
-    if(/ixcharge\d*$/.test(spec.id)){
-        opts.demo='off';changes.forEach(fn=>fn('demo'));
-        const sourceId=spec.config.legacySource,now=Date.now();
-        assert.strictEqual(sourceId,'suhailpatel_ixdrive');
-        const name='/tmp/mgu-'+sourceId+'-legacy-charges.json';
-        shared[name]=JSON.stringify({version:1,source:'ixdrive',sourceId,demo:false,t:now,
-            history:{log:[{from:20,to:80,fromT:now-3600000,toT:now,kwh:null}],charges:[]}});
-        for(const timer of timers)await timer.fn();
-        for(const timer of timers)await timer.fn();
-        const saved=JSON.parse(fs.readFileSync(path.join(dataDir,'charging.json'),'utf8'));
-        assert.strictEqual(saved.log.length,1,'Store history imports only once');
-        assert.strictEqual(saved.log[0].source,sourceId);
-        assert.strictEqual(saved.log[0].kwh,null);
-        texts.length=0;await ctx.tab(1);await ctx.frame();
-        assert(texts.indexOf('Includes imported iXDrive history')>=0);
-    }
-    // Exercise the real decoder whose modern Object API previously failed on Node 8.
-    if(/ixobservatory\d*$/.test(spec.id)){
-        const model=require(path.join(source,'javascript/model'));
-        assert.deepStrictEqual(model.decode([0x62,0x12,0x34,10],{did:'1234',fields:{t:{at:0}}}),{t:10});
+    // iX Cluster: its shared decoder (Node 8 has no modern Object API) and the EV readouts it draws with
+    if(/ixcluster\d*$/.test(spec.id)){
+        const {decode}=require(path.join(source,'javascript/decode'));
+        assert.deepStrictEqual(decode([0x62,0x12,0x34,10],{did:'1234',fields:{t:{at:0}}}),{t:10});
     }
     console.log('PASS '+spec.id+' packaged pages and transport on '+process.version);
 }

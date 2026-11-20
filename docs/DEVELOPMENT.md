@@ -31,17 +31,20 @@ App-owned font atlases can be loaded from a data pack and registered once with
 and a content-derived `cacheKey`; the shared renderer uses it to avoid stale glyphs
 after an asset update. Definitions use the same `sizes` format as toolkit fonts.
 Registration cannot replace existing families. Keep font licences in the app's
-`NOTICE`. iX Pulse's `typography.js` is an example; its fonts do not change other
+`NOTICE`. Registered fonts do not change other
 apps' typography.
 
 Declare only the SOME/IP interfaces an app actually needs in `signals`; use
-`ctx.signals.watch()` to subscribe. Consult `kit/runtime/signals.js`, existing
+`ctx.signals.watch()` to subscribe. An interface that isn't instance `1` on the
+car needs `"_instances"` (the installer refuses the whole app otherwise), and the
+app must watch that instance. `kit/tools/check_signals.py <catalogue>` checks
+fields, flags and instances against a head-unit capture. Consult `kit/runtime/signals.js`, existing
 apps and `docs/rhmi-widgets.md` for signatures. Diagnostic access uses
 `kit/runtime/diag.js` and `dids.js`. Vehicle-specific IDs, units and sign conventions
 need validation; a plausible response is not proof of a correct decoder.
 Represent unsupported or stale readings as unavailable. Don't silently substitute
 demo data or invent nominal capacities. Keep background reads bounded so parked
-cars can sleep. The iXDrive activity handling is an example.
+cars can sleep. iX Cluster's `evcar.js` activity handling is an example.
 
 ## Verification and builds
 

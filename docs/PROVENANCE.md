@@ -6,7 +6,8 @@ Only tracked toolkit, deployment, reference documentation and licence files were
 copied. Other vehicle apps, local vehicle data, SDK files and build outputs were
 not imported. Translation catalogs, supplemental localization bundles and
 translation maintenance tools are omitted at the owner's request. The English
-build adapter and original licence notices are retained. iXDrive is moved separately with its tests and project context.
+build adapter and original licence notices are retained. iXDrive was moved separately with its tests and project context
+(removed on 20 November 2026 with the other EV apps; see the Git history).
 
 The toolkit is derived from the MGU App Kit. Preserve the original attribution
 in the root `LICENSE` (MIT) and translation notices. The renderer has separate

@@ -5,6 +5,14 @@ New home: `/Users/Suhail/Development/id7-apps`.
 Previous repo: `/Users/Suhail/Development/idrive7-apps`.
 Source revision: `8048eb091a20c5e2bfe36cda96e938472d2dfdc5`.
 
+## Current state — 20 November 2026
+
+The repository now holds **iX Cluster** and **TyreWatch** only. The user asked to
+remove iXDrive, iXCharge, iX Observatory, iX Pulse and iX Service as no longer
+used, and chose to remove Trip Capsule too (it only shows iXDrive journeys) along
+with all six Store listings, tests and tools. The sections below are the project's
+history; their apps can be found in the Git history before that removal.
+
 ## User decisions
 
 - Suhail owns a BMW G08 iX3. Initially investigated eDrive, then explicitly chose
@@ -645,3 +653,13 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
   `HMI_FoMo_Right`; Cluster Themes declared none). `0.1.3` declares `HMI_CID` and
   evcar.js watches each interface on its declared instance. `check_signals.py` now
   also checks declared instances against the catalogue's `instanceIDs`; every app passes.
+
+## EV app removal — 20 November 2026
+
+- Removed apps/ixdrive, ixcharge, ixobservatory, ixpulse, ixservice and tripcapsule,
+  their `store/apps/` listings, tests, icon/font tools and Store/smoke special cases.
+  Store now offers `suhailpatel_tyrewatch` and `suhailpatel_ixcluster`; installed
+  copies on the car are not uninstalled by this. iX Cluster keeps its own copies of
+  iX Pulse's decoder and collector. `audit_sdk.js` drops its iXDrive reproduction and
+  checks each declared instance. Shipped packages of the remaining apps are unchanged
+  (no version bumps). TELEMETRY_AUDIT.md is kept as a historical record.

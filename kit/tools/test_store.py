@@ -78,23 +78,6 @@ def main():
             logs.add(pkg['oapAppSettings']['loggingId'])
             assert json.loads((root / 'apps' / source / 'app.json').read_text())['id'] == source
             assert next(s for s in spec['settings'] if s['key'] == 'demo')['default'] == 'off'
-            if source in ('ixdrive', 'tripcapsule'):
-                assert next(s for s in spec['settings'] if s['key'] == 'distUnit')['default'] == 'mi'
-            if source == 'ixdrive':
-                assert 'rhmiDataStartWidget/application.json' in data
-            if source == 'ixcharge':
-                assert 'suhailpatel_ixdrive' not in pkg['requires']
-                assert spec['config']['legacySource'] == 'suhailpatel_ixdrive'
-            if source == 'ixpulse':
-                assert pkg['requires']['cluster-render'] == '0.5.4'
-                assert data['javascript/LICENSE'] == (ROOT / 'apps/ixpulse/LICENSE').read_bytes()
-                assert b'MPL-2.0' in data['javascript/NOTICE']
-                assert b'SIL OPEN FONT LICENSE Version 1.1' in data['javascript/NOTICE']
-                assert b'The Barlow Project Authors' in data['javascript/NOTICE']
-                assert b'The Michroma Project Authors' in data['javascript/NOTICE']
-                assert data['javascript/typefaces.pack'].startswith(b'MGUPACK1')
-                assert next(s for s in spec['settings'] if s['key'] == 'hud')['default'] == 'off'
-                assert next(s for s in spec['settings'] if s['key'] == 'cluster')['default'] == 'off'
             if source == 'ixcluster':
                 assert pkg['requires']['cluster-render'] == '0.5.4'
                 assert b'Mozilla Public License 2.0' in data['javascript/NOTICE'] and b'bimmer-lab' in data['javascript/NOTICE']
@@ -102,18 +85,6 @@ def main():
                 assert b'SIL OPEN FONT LICENSE Version 1.1' in data['javascript/NOTICE']
                 assert data['javascript/hud.pack'].startswith(b'MGUPACK1')
                 assert spec['config']['groups']['hvV'][0]['did'] == 'E54D'
-            if source == 'tripcapsule':
-                assert pkg['requires']['suhailpatel_ixdrive'] == store.read(ROOT / 'apps/ixdrive/app.json')['version']
-                assert spec['config']['journeySource'] == 'suhailpatel_ixdrive'
-            if source == 'ixservice':
-                proxies = json.loads(data['manifest.json'])['proxies']
-                signals = {
-                    'de.bmw.infotainment.KombiInterface_2': {'cbsDataServiceList': 'rs', 'cbsDataSBA': 'rs', 'ccList': 'rs'},
-                    'de.bmw.infotainment.checkcontrol.CheckControlMaster': {'basicList': 'rs'},
-                }
-                for iface, fields in signals.items():
-                    assert proxies[iface] == {'instances': '1', 'attributes': fields}
-                assert all('tasu' not in iface.lower() for iface in proxies)
             app_data = root / ('data-' + source)
             app_data.mkdir()
             node = os.environ.get('ID7_RUNTIME_NODE', 'node')
@@ -124,7 +95,7 @@ def main():
             print(run(node, 'kit/tools/check_store_runtime.js',
                       str(root / 'dist/store-build' / app_id / 'source'), str(app_data), cwd=root).strip())
         # Mimic the Store's manifest/folder rename. Build under the supplied ID.
-        original = root / 'store/apps/suhailpatel_ixdrive'
+        original = root / 'store/apps/suhailpatel_ixcluster'
         renamed = original.with_name(original.name + '2')
         shutil.copytree(original, renamed)
         meta = json.loads((renamed / 'app.json').read_text())
@@ -143,7 +114,7 @@ def main():
             assert c['artifact']['url'] == 'https://github.com/suhailpatel/id7-apps/releases/download/catalog/' + c['artifact']['name']
             assert c['artifact']['sha256'] == store.sha(out / c['artifact']['name'])
         # Version drift must fail before artifacts are offered.
-        p = root / 'apps/ixdrive/app.json'
+        p = root / 'apps/ixcluster/app.json'
         spec = json.loads(p.read_text())
         major, minor, patch = map(int, spec['version'].split('.'))
         spec['version'] = f'{major}.{minor}.{patch + 1}'

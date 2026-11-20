@@ -18,7 +18,7 @@ const fs = require('fs');
 const path = require('path');
 const { headUnit } = require('./hu-stub');
 
-const stage = path.resolve(process.argv[2] || 'dist/ixdrive');
+const stage = path.resolve(process.argv[2] || 'dist/ixcluster');
 const localePath = path.join(stage, 'source', 'javascript', 'kit', 'locale.json');
 const previewLanguage = JSON.parse(fs.readFileSync(localePath, 'utf8')).language || 'en';
 console.log('[preview] UI language: ' + previewLanguage + ' | stage: ' + stage);

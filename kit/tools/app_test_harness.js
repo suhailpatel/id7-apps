@@ -3,7 +3,7 @@ const fs=require('fs'),path=require('path'),os=require('os'),Module=require('mod
 const ROOT=path.resolve(__dirname,'../..'),KIT=path.join(ROOT,'kit/runtime');
 const T=Date.UTC(2026,10,10);
 // Run the real entrypoints with the real canvas recorder and fake transport/clock.
-const env={now:T,shared:null};
+const env={now:T};
 let timers=[],app;
 const originalNow=Date.now,originalInterval=global.setInterval;
 Date.now=()=>env.now;global.setInterval=(fn,ms)=>{timers.push({fn,ms});return 0;};
@@ -11,10 +11,6 @@ const load=Module._load;
 Module._load=function(req,parent,isMain){
     if(req==='./kit/mgu')return {run:a=>{app=a;}};
     if(req.startsWith('./kit/'))return load.call(this,path.join(KIT,req.slice(6)),parent,isMain);
-    if(req==='fs' && parent && /apps[/\\](tyrewatch|tripcapsule|ixcharge)/.test(parent.filename))return Object.assign({},fs,{
-        statSync:p=>(p==='/tmp/mgu-ixdrive-trips.json'||p==='/tmp/mgu-ixdrive-legacy-charges.json')?{size:env.shared?JSON.stringify(env.shared).length:0}:fs.statSync(p),
-        readFileSync:(p,...args)=>(p==='/tmp/mgu-ixdrive-trips.json'||p==='/tmp/mgu-ixdrive-legacy-charges.json')?JSON.stringify(env.shared):fs.readFileSync(p,...args)
-    });
     return load.call(this,req,parent,isMain);
 };
 const dirs=[];

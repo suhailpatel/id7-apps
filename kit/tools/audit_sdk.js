@@ -47,28 +47,6 @@ const flush=async()=>{for(let i=0;i<30;i++)await new Promise(r=>setImmediate(r))
  });
  const proxy=await builders.buildTypedProxy('audit.Service','1');await proxy.init();await proxy.reading.getValue(3000);await proxy.reading.subscribe(()=>{});
  for(const kind of ['build','get','subscribe'])assert.deepStrictEqual(calls.find(c=>c.kind===kind),sdkCalls.find(c=>c.kind===kind));
- let now=Date.UTC(2026,10,11),timeoutList=[],settings={demo:'off',slowPoll:5};
- const samples=[],L={speed:60,speedT:now,soc:60,socT:now,climate:false,seats:{},wheel:false,batt:{avg:25,min:24,max:26},battT:now,ambient:10,ambientT:now};
- class Clock extends Date {static now(){return now;}}
- const fakeFs={readFileSync(){throw new Error('no saved state');},writeFileSync(){}};
- let failVoltage=false;
- const reader={raws:{},key:c=>c.did,read:async c=>{
-  if(c.did==='DD68'&&failVoltage)return null;
-  reader.raws[c.did]={bytes:'62 '+c.did.slice(0,2)+' '+c.did.slice(2)+' 00 00'};return c.did==='DD68'?400:-50;
- }};
- const start=load(path.join(root,'apps/ixdrive/live.js'),{fs:fakeFs},{Date:Clock,process:{on(){}},
-  setTimeout:(fn,ms)=>{const t={fn,ms};timeoutList.push(t);return t;},clearTimeout:t=>{timeoutList=timeoutList.filter(x=>x!==t);},setInterval:()=>0});
- const live=start({dataDir:'/audit',spec:{config:{battery:{powerSign:-1,fast:{hvV:[{did:'DD68',fields:{v:{}}}],hvI:[{did:'DD69',fields:{a:{}}}]},slow:{}}}},settings:{get:k=>settings[k],onChange(){}},log:quiet},
-  {diag:{available:true,on(){}},reader,exclusive:fn=>fn(),live:L,active:()=>true,page:()=> 'main',onSample:s=>samples.push(s)});
- const fire=async()=>{const t=timeoutList.find(t=>t.ms===2000);assert(t);timeoutList=timeoutList.filter(x=>x!==t);await t.fn();await flush();};
- await fire();failVoltage=true;now+=30000;L.speedT=now;L.socT=now;await fire();
- const oldVoltageSample=samples[samples.length-1];
- for(let i=0;i<2;i++){now+=2000;L.speedT=now;L.socT=now;await fire();}
- const oldVoltageEnergy=live.energySample().kwh;
- const {Recorder}=require(path.join(kit,'record')),theme=require(path.join(kit,'themes')).theme('ice');
- now+=3600000;
- const hourOld=live.draw('battery',new Recorder(1600,520),theme);
- // Two real collectors: no SDK-derived numeric schemas are available for their identifiers.
  const paths=[];function walk(d){for(const n of fs.readdirSync(d)){const f=path.join(d,n);if(fs.statSync(f).isDirectory())walk(f);else paths.push(f);}}walk(sdk);
  const source=paths.map(f=>fs.readFileSync(f,'utf8')).join('\n');
  const apps=fs.readdirSync(path.join(root,'apps')).filter(n=>fs.existsSync(path.join(root,'apps',n,'app.json'))).map(n=>require(path.join(root,'apps',n,'app.json')));
@@ -78,10 +56,11 @@ const flush=async()=>{for(let i=0;i<30;i++)await new Promise(r=>setImmediate(r))
   const catalog=JSON.parse(fs.readFileSync(catalogFile,'utf8'));let declarations=0;
   for(const app of apps)for(const [name,fields] of Object.entries(app.signals||{})) {
    const service=catalog.interfaces[name];assert(service,app.id+' missing '+name);
-   const instances=catalog.instanceIDs[name]||{};
+   const instances=catalog.instanceIDs[name]||{},want=typeof fields._instances==='string'?fields._instances:'1';
    if(name==='com.harman.infotainment.systemfunctions.tasu.tasu.InternalTasu')
     assert.strictEqual(instances.SystemFunctionsInternalTasuInst1,128,'diagnostic instance');
-   else assert(Object.values(instances).includes(1),name+' missing instance 1');
+   // the instance the app declares must be on the unit (iX Cluster's now playing is HMI_CID, not 1)
+   else assert(Object.prototype.hasOwnProperty.call(instances,want),app.id+' '+name+' missing instance '+want);
    for(const [name,flags] of Object.entries(fields)) {
     if(name==='_methods'||name==='_broadcasts') {
      for(const f of flags)assert((service[name==='_methods'?'methods':'events']||{})[f],f);
@@ -108,8 +87,7 @@ const flush=async()=>{for(let i=0;i<30;i++)await new Promise(r=>setImmediate(r))
   sdkDefaultInstances:{vehicle:defaults.someip.instances.vehicleService,vehicle2:defaults.someip.instances.vehicle2,environment:defaults.someip.instances.environmentalInformation},
   declaredFieldNamesMentionedInExtractedSdk:fields.filter(f=>source.includes(f)),declaredFieldNamesAbsentFromExtractedSdk:fields.filter(f=>!source.includes(f)),
   localMasterCatalogPresent:fs.existsSync(catalogFile),catalogEvidence,
-  reproductions:{getterCallsWhileParked:parkedGets,newPowerUsing30SecondOldVoltage:oldVoltageSample.kw,
-   energyIntegratedFromOldVoltageKwh:oldVoltageEnergy,ambientAfterOneHour:hourOld.ambient,batteryTemperatureFallbackAfterOneHour:hourOld.carT},
+  reproductions:{getterCallsWhileParked:parkedGets},
   vehicleValidation:'Not performed; fake transport confirms software behaviour only.'};
  console.log(JSON.stringify(report,null,2));
 })().catch(e=>{console.error(e.stack);process.exitCode=1;});

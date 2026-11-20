@@ -13,13 +13,7 @@ ROOT = Path(build.ROOT)
 PREFIX = 'suhailpatel_'
 # Only these reviewed apps are offered. New scaffolded apps remain private by default.
 APPS = {
-    'ixdrive': ('SIDX', 'EV range, energy, battery and journey dashboard. G08 telemetry awaits vehicle validation.'),
-    'ixcharge': ('SIXC', 'Independent charging estimates, session history and power curves. G08 telemetry awaits vehicle validation.'),
     'tyrewatch': ('STYW', 'Tyre pressure, temperature and cool-reading history. G08 field mapping awaits vehicle validation.'),
-    'tripcapsule': ('STCP', 'Saved journey cards, labels and favourites. Requires iXDrive running for new journeys.'),
-    'ixobservatory': ('SIXO', 'Battery and thermal overview, temperature charts and cell voltages. G08 telemetry awaits vehicle validation.'),
-    'ixpulse': ('SIXP', 'EV driving HUD and cluster: speed, range, observed consumption and navigation turns. Requires Cluster renderer; G08 validation pending.'),
-    'ixservice': ('SIXS', 'Read-only BMW service reminders and a Check Control timeline. G08 validation pending.'),
     'ixcluster': ('SIXL', 'Thirteen full-screen cluster themes for the iX3: power and regen, charge, battery temperature, range and tyres. Requires Cluster renderer; G08 validation pending.'),
 }
 SHARED = ['kit/runtime', 'kit/platform', 'kit/tools/build.py', 'kit/tools/pack_data.py',
@@ -43,13 +37,8 @@ def listings():
         directory = 'store/apps/' + app_id
         requires = {'mgu-render': '0.6.19', 'mgu-deploy': '0.6.9'}
         config = {}
-        if source in ('ixpulse', 'ixcluster'):
+        if source == 'ixcluster':
             requires['cluster-render'] = '0.5.4'
-        if source == 'ixcharge':
-            config['legacySource'] = PREFIX + 'ixdrive'
-        if source == 'tripcapsule':
-            requires[PREFIX + 'ixdrive'] = read(ROOT / 'apps/ixdrive/app.json')['version']
-            config['journeySource'] = PREFIX + 'ixdrive'
         manifest = {'id': app_id, 'sourceApp': source, 'version': spec['version'],
                     'title': spec['title'], 'description': description, 'vendor': 'suhailpatel',
                     'author': 'suhailpatel', 'loggingId': logging_id, 'mguHmi': ['ID7'],

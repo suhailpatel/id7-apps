@@ -1,13 +1,15 @@
 # Working in id7-apps
 
-Read README.md and docs/CONTEXT.md before changing iXDrive. See docs/DEVELOPMENT.md
-for the app template, build workflow and shared runtime. This repository is the
-new home for iXDrive; do not edit the previous idrive7-apps copy as its source.
+Read README.md and docs/CONTEXT.md before changing an app. See docs/DEVELOPMENT.md
+for the app template, build workflow and shared runtime. The apps here are iX
+Cluster and TyreWatch; do not edit the previous idrive7-apps copy as their source.
 
 - English-only: do not add translation work or translation checks unless requested.
 - Target BMW iDrive 7. The current car is the G08 iX3; newer iDrive platforms are
   outside the agreed scope.
 - Keep vehicle telemetry read-only unless a task explicitly requests otherwise.
+  Check SOME/IP declarations (fields, flags and `_instances`) with
+  `kit/tools/check_signals.py <catalogue>` against a head-unit capture.
   Unknown/stale values remain unavailable. Demo must be explicitly enabled and
   must never train or persist real history.
 - Don't add manual battery-size, rated-power or model settings. Prefer verified
@@ -35,8 +37,7 @@ new home for iXDrive; do not edit the previous idrive7-apps copy as its source.
   pushing; do not rewrite history just to add the version.
 - Shared runtime or build changes require bumps for every app whose shipped
   package is affected. Bump a dependent app too when its shipped dependency
-  metadata changes. In particular, the Store generator tracks iXDrive's current
-  version in Trip Capsule's minimum requirement.
+  metadata changes.
 - Run `npm run store:prepare` after updating source versions. Commit the generated
   `store/apps/` manifests/icons and `mgu-repo.json` changes alongside the source.
   Do not edit generated versions by hand. Keep project context current where it
