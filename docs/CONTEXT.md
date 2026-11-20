@@ -26,7 +26,7 @@ Source revision: `8048eb091a20c5e2bfe36cda96e938472d2dfdc5`.
 
 ## Implemented state
 
-App identity: `ixdrive`, version `0.2.1`, logging ID `OAXD`; separate settings,
+App identity: `ixdrive`, version `0.2.2`, logging ID `OAXD`; separate settings,
 history and home-screen widget. The icon is a white SUV with a cyan lightning bolt
 on black, 140 × 140 PNG, with generation prompt in `apps/ixdrive/icon-prompt.txt`.
 
@@ -571,3 +571,11 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
 - iXDrive `0.2.1`: the home-screen widget's progress bar takes a 0..1 share, not
   a percentage (upstream `bac04fc`); it previously showed full at any power.
   Trip Capsule `0.1.6` follows the minimum iXDrive version.
+- Shared runtime: drawn frames (home-screen widget, screen images without the GPU
+  renderer) go to `/tmp/mgu-frames-<id>-<uid>` in RAM instead of the eMMC resource
+  folder (upstream `f36fdfe`; about 0.3 GB/hour with a widget showing). Folder 0755,
+  files 0644, four rotating files per image, cleared at start and on widget removal;
+  falls back to the resource folder if RAM fails or the HMI refuses a frame. HMI
+  acceptance from `/tmp` was reported upstream, not observed on this G08.
+  All apps bumped: iXDrive 0.2.2, Trip Capsule 0.1.7, iXCharge 0.1.3,
+  Observatory 0.1.4, iX Pulse 0.1.9, TyreWatch 0.1.4, iX Service 0.1.1.

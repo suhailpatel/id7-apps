@@ -1,7 +1,7 @@
 {
   "id": "suhailpatel_ixservice",
   "sourceApp": "ixservice",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "title": "iX Service",
   "description": "Read-only BMW service reminders and a Check Control timeline. G08 validation pending.",
   "vendor": "suhailpatel",

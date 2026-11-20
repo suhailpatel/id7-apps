@@ -2,7 +2,7 @@
   "id": "ixpulse",
   "title": "iX Pulse",
   "description": "EV driving HUD and cluster with speed, range, observed average consumption and navigation directions. G08 validation pending.",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "vendor": "custom",
   "loggingId": "OAXP",
   "iconGlyph": "bolt",

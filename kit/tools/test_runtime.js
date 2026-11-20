@@ -201,6 +201,36 @@ test('the one-time move to the new default theme: a theme picked on a fresh inst
     assert.strictEqual(new S(schema).get('theme'), 'amber');
 });
 
+test('drawn frames go to RAM, readable by the HMI; the resource folder when RAM fails or is refused', async () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'runtime', 'mgu.js'), 'utf8').replace(/\r\n/g, '\n');
+    const block = src.match(/let frameRam = null;[\s\S]*?\n(?=function fileLog)/)[0];
+    const make = (sub, ramDir) => {
+        const res = path.join(dir, sub, 'resources'), logs = [];
+        fs.mkdirSync(res, { recursive: true });
+        fs.writeFileSync(path.join(res, 'dyn_old_main_0.png'), 'x');          // left by an earlier run
+        const api = new Function('fs', 'path', 'FRAME_DIR', 'RHMI_RES', 'fileLog',
+            block + '\nreturn { writeFrame, frameRefused };')(fs, path, ramDir, res, (l, m) => logs.push(l + ' ' + m));
+        return Object.assign(api, { res, logs });
+    };
+    const ram = path.join(dir, 'frames-ram');
+    fs.mkdirSync(ram); fs.writeFileSync(path.join(ram, 'stale.png'), 'x');
+    const a = make('ram', ram);
+    assert(!fs.existsSync(path.join(a.res, 'dyn_old_main_0.png')) && !fs.existsSync(path.join(ram, 'stale.png')), 'earlier frames cleared');
+    const f = a.writeFrame(path.join(a.res, 'dyn_t_main_0.png'), Buffer.from('png'));
+    assert.strictEqual(f, path.join(ram, 'dyn_t_main_0.png'), 'in RAM');
+    assert.strictEqual(fs.statSync(f).mode & 0o777, 0o644, 'world-readable frame');
+    assert.strictEqual(fs.statSync(ram).mode & 0o777, 0o755, 'world-readable folder');
+    assert(!fs.existsSync(path.join(a.res, 'dyn_t_main_0.png')), 'nothing written to the resource folder');
+    a.frameRefused(f, new Error('RESOURCE_ERROR'));
+    assert.strictEqual(a.writeFrame(path.join(a.res, 'dyn_t_main_1.png'), Buffer.from('png')), path.join(a.res, 'dyn_t_main_1.png'), 'refused: resource folder');
+    // RAM not writable (a file where the folder would be): the resource folder from the first frame
+    const blocked = path.join(dir, 'frames-blocked');
+    fs.writeFileSync(blocked, 'not a folder');
+    const b = make('blocked', blocked);
+    assert.strictEqual(b.writeFrame(path.join(b.res, 'dyn_t_w1_0.png'), Buffer.from('png')), path.join(b.res, 'dyn_t_w1_0.png'));
+    assert(b.logs.some((l) => /not in RAM/.test(l)), 'the fallback is logged');
+});
+
 test('settings: aliases, "when" and "group" (the drawn settings sheet), "hidden"', async () => {
     const src = fs.readFileSync(path.join(__dirname, '..', 'runtime', 'mgu.js'), 'utf8').replace(/\r\n/g, '\n');
     const cls = src.match(/class Settings[\s\S]*?\n}\n/)[0];

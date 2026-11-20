@@ -2,7 +2,7 @@
   "id": "ixservice",
   "title": "iX Service",
   "description": "BMW service reminders and observed Check Control history for iDrive 7. G08 validation pending.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "vendor": "custom",
   "loggingId": "OSVP",
   "iconGlyph": "XS",
