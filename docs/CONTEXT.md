@@ -26,7 +26,7 @@ Source revision: `8048eb091a20c5e2bfe36cda96e938472d2dfdc5`.
 
 ## Implemented state
 
-App identity: `ixdrive`, version `0.2.3`, logging ID `OAXD`; separate settings,
+App identity: `ixdrive`, version `0.2.4`, logging ID `OAXD`; separate settings,
 history and home-screen widget. The icon is a white SUV with a cyan lightning bolt
 on black, 140 × 140 PNG, with generation prompt in `apps/ixdrive/icon-prompt.txt`.
 
@@ -586,3 +586,8 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
   start waited behind all subscription set-ups. All apps bumped: iXDrive 0.2.3,
   Trip Capsule 0.1.8, iXCharge 0.1.4, Observatory 0.1.5, iX Pulse 0.1.10,
   TyreWatch 0.1.5, iX Service 0.1.2.
+- iXDrive `0.2.4`: the diagnostic queue moved to `linkqueue.js` (upstream eDrive
+  2.11.0). Power reads stay urgent and in order, but a waiting slow read gets a
+  turn after three urgent turns in a row; previously urgent reads were pushed to
+  the front indefinitely and in reverse order. Trip Capsule `0.1.9` follows.
+  Test: `kit/tools/test_ixdrive_linkqueue.js`.

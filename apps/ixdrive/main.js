@@ -13,6 +13,7 @@ const { DidReader } = require('./kit/dids');
 const { t: translate } = require('./kit/i18n');
 const { RangeModel } = require('./range');
 const startLive = require('./live');
+const { linkQueue } = require('./linkqueue');
 const { track } = require('./freshness');
 const { Insights, journeyStats, demoInsights } = require('./insights');
 const { createActivity, CapacityLearner } = require('./ev');
@@ -316,27 +317,8 @@ mgu.run({
         /* ---------- UDS reads (candidates per value, see kit/dids.js) ---------- */
         const reader = new DidReader(diag, { ecu: cfg.ecu });
         const raws = reader.raws, pick = reader.pick;      // for the Diagnostics page
-        // one request at a time on the diagnostic link: a queue rather than a plain chain, so a live
-        // power read (urgent) goes ahead of the reads that wait
-        const queue = [];
-        let pumping = false;
-        async function pump() {
-            if (pumping) return;
-            pumping = true;
-            while (queue.length) {
-                const j = queue.shift(), t0 = Date.now();
-                try { j.res(await j.fn()); } catch (e) { j.rej(e); }
-                // one turn that holds the link this long delays every read behind it (the live power too): say which
-                const ms = Date.now() - t0;
-                if (ms > 1500) { exclusive.stalls = (exclusive.stalls || 0) + 1; log.warn('link held ' + ms + ' ms by ' + j.label + (queue.length ? ' (' + queue.length + ' waiting)' : '')); }
-            }
-            pumping = false;
-        }
-        const exclusive = (fn, urgent, label) => new Promise((res, rej) => {
-            const j = { fn, res, rej, label: label || (urgent ? 'urgent' : 'read') };
-            if (urgent) queue.unshift(j); else queue.push(j);
-            pump();
-        });
+        // one request at a time on the diagnostic link: power reads first, the others still get turns (linkqueue.js)
+        const exclusive = linkQueue(log);
         const readValue = (key) => { const epoch = telemetryGeneration; return exclusive(() =>
             active() && !usingDemo() && epoch === telemetryGeneration ? reader.value(key, cfg[key]) : null); };
         let lv = null;
