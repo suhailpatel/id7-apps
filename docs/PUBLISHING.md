@@ -14,19 +14,22 @@ revision `fc79a75f07f364c69165dec830f2fa4553ff20e4`, on 11 November 2026.
 | iX Observatory | `suhailpatel_ixobservatory` | `ixobservatory` |
 | iX Pulse | `suhailpatel_ixpulse` | `ixpulse` |
 | iX Service | `suhailpatel_ixservice` | `ixservice` |
+| iX Cluster | `suhailpatel_ixcluster` | `ixcluster` |
 
 The display names and icons stay the same. Store editions have separate settings,
 history, RHMI identities and logging IDs. Existing development installs retain
 their data; installing a Store edition does not migrate that data.
 
-All seven declare **ID7 only**, demo off and no internet requirement. iXDrive and
+All eight declare **ID7 only**, demo off and no internet requirement. iXDrive and
 Trip Capsule default to miles. Trip Capsule requires the Store edition of iXDrive
 and reads its fresh journey summaries while both apps run. It does not import
 journeys from a development install. Shared files use the installed iXDrive ID:
 `/tmp/mgu-<id>.json` and `/tmp/mgu-<id>-trips.json`.
 
 iX Pulse requires `cluster-render >= 0.5.4` for its experimental HUD/cluster
-outputs, both off by default. Its centre-screen dashboard is independent of
+outputs, both off by default. iX Cluster requires the same version; it draws
+its themes on the cluster once installed (BMW's own cluster with the theme Off), and
+its NOTICE carries Cluster Themes' MIT, cluster-render client MPL-2.0 and font OFL notices. Its centre-screen dashboard is independent of
 iXDrive. The projection client carries its MPL-2.0 licence and notice inside
 `javascript/`; the rest of the package retains the existing licences.
 

@@ -20,6 +20,7 @@ APPS = {
     'ixobservatory': ('SIXO', 'Battery and thermal overview, temperature charts and cell voltages. G08 telemetry awaits vehicle validation.'),
     'ixpulse': ('SIXP', 'EV driving HUD and cluster: speed, range, observed consumption and navigation turns. Requires Cluster renderer; G08 validation pending.'),
     'ixservice': ('SIXS', 'Read-only BMW service reminders and a Check Control timeline. G08 validation pending.'),
+    'ixcluster': ('SIXL', 'Full-screen cluster themes for the iX3: power and regen, charge, battery temperature and range. Requires Cluster renderer; G08 validation pending.'),
 }
 SHARED = ['kit/runtime', 'kit/platform', 'kit/tools/build.py', 'kit/tools/pack_data.py',
           'kit/tools/localize.py', 'kit/tools/locale-revisions.json', 'LICENSE', 'NOTICE.zh-CN.md', 'docs/PROVENANCE.md']
@@ -42,7 +43,7 @@ def listings():
         directory = 'store/apps/' + app_id
         requires = {'mgu-render': '0.6.19', 'mgu-deploy': '0.6.9'}
         config = {}
-        if source == 'ixpulse':
+        if source in ('ixpulse', 'ixcluster'):
             requires['cluster-render'] = '0.5.4'
         if source == 'ixcharge':
             config['legacySource'] = PREFIX + 'ixdrive'

@@ -1,0 +1,19 @@
+{
+  "id": "suhailpatel_ixcluster",
+  "sourceApp": "ixcluster",
+  "version": "0.1.1",
+  "title": "iX Cluster",
+  "description": "Full-screen cluster themes for the iX3: power and regen, charge, battery temperature and range. Requires Cluster renderer; G08 validation pending.",
+  "vendor": "suhailpatel",
+  "author": "suhailpatel",
+  "loggingId": "SIXL",
+  "mguHmi": [
+    "ID7"
+  ],
+  "requires": {
+    "mgu-render": "0.6.19",
+    "mgu-deploy": "0.6.9",
+    "cluster-render": "0.5.4"
+  },
+  "config": {}
+}

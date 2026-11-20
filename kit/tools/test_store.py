@@ -95,6 +95,13 @@ def main():
                 assert data['javascript/typefaces.pack'].startswith(b'MGUPACK1')
                 assert next(s for s in spec['settings'] if s['key'] == 'hud')['default'] == 'off'
                 assert next(s for s in spec['settings'] if s['key'] == 'cluster')['default'] == 'off'
+            if source == 'ixcluster':
+                assert pkg['requires']['cluster-render'] == '0.5.4'
+                assert b'Mozilla Public License 2.0' in data['javascript/NOTICE'] and b'bimmer-lab' in data['javascript/NOTICE']
+                assert data['javascript/LICENSE'] == (ROOT / 'apps/ixcluster/LICENSE').read_bytes()
+                assert b'SIL OPEN FONT LICENSE Version 1.1' in data['javascript/NOTICE']
+                assert data['javascript/hud.pack'].startswith(b'MGUPACK1')
+                assert spec['config']['groups']['hvV'][0]['did'] == 'E54D'
             if source == 'tripcapsule':
                 assert pkg['requires']['suhailpatel_ixdrive'] == store.read(ROOT / 'apps/ixdrive/app.json')['version']
                 assert spec['config']['journeySource'] == 'suhailpatel_ixdrive'

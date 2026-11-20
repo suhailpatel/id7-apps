@@ -2,7 +2,7 @@
   "id": "ixcluster",
   "title": "iX Cluster",
   "description": "Full-screen instrument cluster themes for the iX3: M view, Sport, Minimal, Cruise and Ribbon, with battery power and regen, charge level, battery temperature and electric range. G08 validation pending.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "vendor": "custom",
   "loggingId": "OAXL",
   "iconGlyph": "gauge",

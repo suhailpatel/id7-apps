@@ -627,3 +627,7 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
   were rendered and reviewed. Tests: `kit/tools/test_ixcluster.js` (seven checks).
 - Unvalidated on the G08: diagnostic battery candidates, feed delivery, cluster
   placement on the iX3, cluster-render coexistence with iX Pulse's projection.
+- Store: user asked to publish-prepare iX Cluster. Added as `suhailpatel_ixcluster`
+  (`SIXL`), requiring `cluster-render >= 0.5.4` like iX Pulse; ships the MPL 2.0 text
+  beside the cluster-render client. iX Cluster `0.1.1`. Store package smoke-tested;
+  no release, push or installation.

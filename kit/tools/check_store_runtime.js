@@ -27,11 +27,12 @@ const opts={};spec.settings.forEach(s=>{opts[s.key]=s.default;});
 if(/ixdrive\d*$/.test(spec.id))opts.diagPage=true;
 const Recorder=require(path.join(kit,'record')).Recorder;
 const ctx={spec,dataDir,
-    settings:{get:k=>opts[k],onChange:fn=>changes.push(fn)},
+    settings:{get:k=>opts[k],onChange:fn=>changes.push(fn),item:k=>spec.settings.find(s=>s.key===k)||null,
+        set(k,v){opts[k]=v;changes.forEach(fn=>fn(k));}},
     log:{info(){},warn(){},error(){}},
-    signals:{watch:async()=>({available:false})},
+    signals:{watch:async()=>({available:false}),proxy:async()=>{throw new Error('no SOME/IP');},on:async()=>{},onAvailable:async()=>{},call:async()=>{throw new Error('no SOME/IP');}},
     ui:{onClick:(key,fn)=>{clicks[key]=fn;},onVisible(){},text(){},image:async()=>{}},
-    hideButton(){},onTab(fn){this.tab=fn;},onScroll(){},loop(name,fps,fn){this.frame=fn;},
+    hideButton(){},onTab(fn){this.tab=fn;},onLayout(){},onScroll(){},loop(name,fps,fn){this.frame=fn;},
     theme:()=>require(path.join(kit,'themes')).theme('ice'),
     canvas(w,h){const cv=new Recorder(w,h),text=cv.text.bind(cv);cv.own=true;
         cv.text=(s,...rest)=>{texts.push(String(s));return text(s,...rest);};return cv;}

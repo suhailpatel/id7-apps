@@ -5,7 +5,7 @@ iX Cluster is adapted from bimmer-lab's Cluster Themes (https://github.com/bimme
 shared/): its engine (hud.js and the files beside it), five of its layouts, its shaders, its centre-screen page and
 its pre-rendered fonts, changed for the iX3's EV data. Cluster Themes is MIT, Copyright (c) 2026 bimmer-lab; the
 iX Cluster changes and evcar.js / evtokens.js are MIT under this repository's LICENSE. decode.js and telemetry.js
-come from this repository's iX Pulse. The gear and label atlases were re-baked from the same OFL fonts listed below.
+come from this repository's iX Pulse. The full MPL 2.0 text for cluster_render_client.js is in LICENSE beside it. The gear and label atlases were re-baked from the same OFL fonts listed below.
 
 Cluster Themes' own notices follow unchanged.
 

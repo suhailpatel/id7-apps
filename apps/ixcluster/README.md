@@ -3,7 +3,7 @@
 Full-screen instrument cluster themes for BMW iDrive 7 and the **G08 iX3**, drawn on
 the whole 1920 × 720 cluster through cluster-render. Adapted from bimmer-lab's
 Cluster Themes (MIT), with every engine readout replaced by an EV one.
-App ID `ixcluster`, version **0.1.0**, logging ID `OAXL`.
+App ID `ixcluster`, version **0.1.1**, logging ID `OAXL`.
 Independent settings; no iXDrive dependency, saved telemetry or learning.
 
 ## Themes
