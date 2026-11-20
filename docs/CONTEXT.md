@@ -26,7 +26,7 @@ Source revision: `8048eb091a20c5e2bfe36cda96e938472d2dfdc5`.
 
 ## Implemented state
 
-App identity: `ixdrive`, version `0.2.4`, logging ID `OAXD`; separate settings,
+App identity: `ixdrive`, version `0.2.5`, logging ID `OAXD`; separate settings,
 history and home-screen widget. The icon is a white SUV with a cyan lightning bolt
 on black, 140 × 140 PNG, with generation prompt in `apps/ixdrive/icon-prompt.txt`.
 
@@ -591,3 +591,17 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
   turn after three urgent turns in a row; previously urgent reads were pushed to
   the front indefinitely and in reverse order. Trip Capsule `0.1.9` follows.
   Test: `kit/tools/test_ixdrive_linkqueue.js`.
+- Fully electric battery candidates (upstream eDrive 2.10.0 `c3ec187`, from OBDb
+  2021-2023 iX3/iX captures, CC BY-SA 4.0; see PROVENANCE.md). Those captures show
+  the iX3 refusing `DD68`/`DD69` and answering `DDBC` with zeros, which explains
+  why the X5 45e candidates could fail on this car. Now tried first: pack voltage
+  `E54D` (0.01 V), current `E561` (4 bytes signed 0.01 A, DD69's direction), SOC
+  `E5CE` (0.01 %; iXCharge/Observatory/Pulse), cells `E554` (112 slots, trailing
+  `7FFF` dropped) and `E553` (Observatory, iXDrive). `DDBC` needs at least 0.5 %.
+  iXDrive's Scan page covers `E500-E5FF`. Changing iXDrive's fast candidates
+  resets `live.json` learning once (existing basis check).
+- Not ported: `E5C7` energy/usable kWh (capacity lists stay empty until verified),
+  74 kWh nominal health, SOC-estimated voltage, BEV auto-detection, background
+  autostart, `fastkw.js` and `battery12.js`. Whether `E5CE` is displayed or
+  physical SOC is unknown. iXDrive 0.2.5, Trip Capsule 0.1.10, iXCharge 0.1.5,
+  Observatory 0.1.6, iX Pulse 0.1.11. Nothing installed on the car or pushed.

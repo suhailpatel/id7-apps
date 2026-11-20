@@ -501,6 +501,20 @@ const checks = [
             assert(!h.charge && !h.charges);
         } finally {replies={};}
     }],
+    ['fully electric pack voltage and current (E54D, E561) drive live power when the plug-in candidates are refused', async () => {
+        const dir=tmp('bev-power');
+        // as OBDb's iX3 captures: DD68 / DD69 refused, 400.00 V and -20.00 A (out of the pack) from the fifth-generation DIDs
+        replies={'7:E54D':'9C 40','7:E561':'FF FF F8 30','7:DD68':'NRC 31','7:DD69':'NRC 31','7:DDB4':'NRC 31','7:DD66':'NRC 31','7:DDEF':'NRC 31'};
+        try {
+            const b=await boot(dir,{soc:60});await b.read();
+            asked=[];
+            for(let i=0;i<10;i++){now+=2000;b.drive(60);await power();}
+            const dids=asked.filter(a=>a.ecu===7&&a.sid===0x22).map(a=>((a.req[0]<<8)|a.req[1]).toString(16).toUpperCase());
+            assert(dids.includes('E54D')&&dids.includes('E561'),'asked '+dids.join(' '));
+            assert(!dids.includes('DD69'),'the answering current candidate keeps being asked first');
+            b.exit();assert(state(dir).insights.journey.km>0,'power from E54D x E561 feeds the journey');
+        } finally {replies={};}
+    }],
     ['history pages browse older records through the HMI action', async () => {
         const b=await boot(tmp('history-browse'),{},{demo:'on'});
         for(let i=0;i<3;i++)await b.page();

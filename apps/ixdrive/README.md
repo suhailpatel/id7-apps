@@ -1,7 +1,7 @@
 # iXDrive
 
 A separate battery-electric fork of eDrive for **BMW iDrive 7**, focused on the
-**G08 iX3**. App ID `ixdrive`, title **iXDrive**, version **0.1.3**. eDrive is
+**G08 iX3**. App ID `ixdrive`, title **iXDrive**, version **0.2.5**. eDrive is
 unchanged. This is an initial implementation with synthetic tests, not yet
 vehicle-validated on a G08. Newer iDrive platforms are outside this release's scope.
 
@@ -86,8 +86,13 @@ must be enabled explicitly. Diagnostic controls are hidden by default.
 `app.json` retains read-only battery/climate candidates inherited from eDrive.
 They are **not confirmed iX3 identifiers**. In particular:
 
-- SOC: SME address `0x07`, DID `DDBC`, two bytes at 0.1%.
-- Voltage: `DDB4`, `DD68`, `DD66`, `DDEF` candidates; current: signed `DD69`.
+- SOC comes from the car's `Efficiencytainment2` feed, not diagnostics.
+- Voltage: fully electric `E54D` first, then `DDB4`, `DD68`, `DD66`, `DDEF`;
+  current: signed `E561` first, then `DD69`.
+- Cell voltages: `E554` (all cells, trailing `7FFF` slots dropped) and `E553`
+  (lowest/highest) first, then `DFA5`, `DDBF`. The Scan page also covers `E500-E5FF`.
+- The `E5xx` layouts come from OBDb's 2021-2023 iX3/iX captures (CC BY-SA 4.0)
+  via upstream eDrive 2.10.0; those captures show the iX3 refusing `DD68`/`DD69`.
 - Cell, temperature and current-limit candidates retain their original provenance.
 - 12 V voltage tries SME `F442`; no engine or transmission units are queried.
 - Capacity and SOH candidates remain empty until their meaning and units are verified.
@@ -123,7 +128,7 @@ node kit/tools/preview.js dist/ixdrive /tmp/ixdrive-preview BTN_PAGE BTN_PAGE BT
 
 The preview tool forces demo data. An offline preview is not an installable
 package. With the BMW `oap-sdk` present, `python3 kit/tools/build.py ixdrive`
-produces `dist/ixdrive@0.1.3.tgz`. The launcher uses `icon.png`: a white
+produces `dist/ixdrive@0.2.5.tgz`. The launcher uses `icon.png`: a white
 electric SUV with a cyan lightning bolt, rendered at 140 × 140 pixels.
 The artwork was created with built-in image generation; its final prompt is
 recorded in `icon-prompt.txt`. The build copies the icon directly.

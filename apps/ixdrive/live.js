@@ -118,8 +118,10 @@ module.exports = function live(ctx, sh) {
                 const v = raw * (f.factor == null ? 1 : f.factor) + (f.offset || 0);
                 cells.push((f.min != null && v < f.min) || (f.max != null && v > f.max) ? null : v);
             }
+            // the slots after the last cell (E554 has 112, filled up with 7FFF) are not cells
+            while (cells.length && cells[cells.length - 1] === null) cells.pop();
             const ok = cells.filter(G.isNum);
-            if (ok.length < cells.length / 2) return null;
+            if (!ok.length || ok.length < cells.length / 2) return null;
             out.cells = cells;
             out.min = Math.min(...ok); out.max = Math.max(...ok); out.avg = ok.reduce((a, v) => a + v, 0) / ok.length;
             out.minAt = cells.indexOf(out.min) + 1; out.maxAt = cells.indexOf(out.max) + 1;
@@ -413,7 +415,8 @@ module.exports = function live(ctx, sh) {
      * found by scanning with something off, then on (heater, A/C). Battery replies holding a 2-byte value
      * that reads as a cell voltage (3.0-4.3 V at 1 mV) or a pack voltage (200-460 V at 0.01 V) are flagged. */
     const SCAN_UNITS = {
-        7: { name: 'battery unit (SME)', ranges: [[0xDD00, 0xDDFF], [0xDF00, 0xDFFF], [0xD600, 0xD6FF], [0x6300, 0x63FF]] },
+        // E500-E5FF: where fifth-generation eDrive battery units (iX3, iX) keep charge, energy, voltage and current
+        7: { name: 'battery unit (SME)', ranges: [[0xDD00, 0xDDFF], [0xDF00, 0xDFFF], [0xD600, 0xD6FF], [0x6300, 0x63FF], [0xE500, 0xE5FF]] },
         120: { name: 'climate unit (IHKA)', ranges: [[0xD000, 0xDFFF], [0x4000, 0x41FF]] },
     };
     const scanUnit = () => (SCAN_UNITS[+settings.get('scanUnit')] ? +settings.get('scanUnit') : 7);

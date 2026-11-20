@@ -95,7 +95,8 @@ files: disable other custom HUD/cluster apps if they overlap. Renderer-reported
 
 ## Readings and limits
 
-Battery data uses the existing iXDrive/eDrive diagnostic candidates, **not yet
+Battery data uses the iXDrive/eDrive diagnostic candidates, with fully electric
+`E54D`/`E561`/`E5CE` layouts from OBDb iX3 captures (CC BY-SA 4.0) first, **not yet
 validated on the G08 iX3**. Projection carries an UNVERIFIED label. Positive power
 is out of the battery. Negative power says REGEN only with fresh observed movement;
 otherwise it says INTO BATTERY, without claiming a charger connection.

@@ -2,7 +2,7 @@
   "id": "ixpulse",
   "title": "iX Pulse",
   "description": "EV driving HUD and cluster with speed, range, observed average consumption and navigation directions. G08 validation pending.",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "vendor": "custom",
   "loggingId": "OAXP",
   "iconGlyph": "bolt",
@@ -435,6 +435,19 @@
     "groups": {
       "hvV": [
         {
+          "did": "E54D",
+          "timeoutMs": 600,
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          },
+          "note": "fully electric (fifth-generation eDrive) pack voltage: confirmed on the iX, likely the iX3. OBDb/BMW-iX3 captures (CC BY-SA 4.0), via upstream eDrive 2.10.0; not yet validated on this G08"
+        },
+        {
           "did": "DDB4",
           "timeoutMs": 600,
           "fields": {
@@ -483,6 +496,20 @@
       ],
       "hvI": [
         {
+          "did": "E561",
+          "timeoutMs": 600,
+          "fields": {
+            "a": {
+              "bytes": 4,
+              "factor": 0.01,
+              "signed": true,
+              "min": -2000,
+              "max": 2000
+            }
+          },
+          "note": "fully electric pack current, same layout and direction as DD69 (negative = out of the pack). OBDb/BMW-iX3 captures (CC BY-SA 4.0), via upstream eDrive 2.10.0; not yet validated on this G08"
+        },
+        {
           "did": "DD69",
           "timeoutMs": 600,
           "fields": {
@@ -498,15 +525,28 @@
       ],
       "soc": [
         {
+          "did": "E5CE",
+          "fields": {
+            "pct": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 0,
+              "max": 100
+            }
+          },
+          "note": "fully electric charge level in 0.01 %, then the lowest and highest cell's charge; displayed vs physical SOC unverified. OBDb/BMW-iX3 captures (CC BY-SA 4.0), via upstream eDrive 2.10.0; not yet validated on this G08"
+        },
+        {
           "did": "DDBC",
           "fields": {
             "pct": {
               "bytes": 2,
               "factor": 0.1,
-              "min": 0,
+              "min": 0.5,
               "max": 100
             }
-          }
+          },
+          "note": "min 0.5: OBDb iX3 captures answer zero here, which must not read as an empty battery"
         }
       ],
       "cellT": [

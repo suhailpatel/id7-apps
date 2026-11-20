@@ -2,7 +2,7 @@
   "id": "ixdrive",
   "title": "iXDrive",
   "description": "EV driving dashboard for the iX3 on iDrive 7: car-reported charge level, learned range and capacity, energy and journeys. Optional battery diagnostics await G08 validation.",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "vendor": "custom",
   "loggingId": "OAXD",
   "iconGlyph": "iX",
@@ -408,6 +408,19 @@
       "fast": {
         "hvV": [
           {
+            "did": "E54D",
+            "timeoutMs": 600,
+            "fields": {
+              "v": {
+                "bytes": 2,
+                "factor": 0.01,
+                "min": 150,
+                "max": 500
+              }
+            },
+            "note": "fully electric (fifth-generation eDrive) pack voltage: confirmed on the iX, likely the iX3. OBDb/BMW-iX3 captures (CC BY-SA 4.0), via upstream eDrive 2.10.0; not yet validated on this G08"
+          },
+          {
             "did": "DDB4",
             "timeoutMs": 600,
             "fields": {
@@ -456,6 +469,20 @@
         ],
         "hvI": [
           {
+            "did": "E561",
+            "timeoutMs": 600,
+            "fields": {
+              "a": {
+                "bytes": 4,
+                "factor": 0.01,
+                "signed": true,
+                "min": -2000,
+                "max": 2000
+              }
+            },
+            "note": "fully electric pack current, same layout and direction as DD69 (negative = out of the pack). OBDb/BMW-iX3 captures (CC BY-SA 4.0), via upstream eDrive 2.10.0; not yet validated on this G08"
+          },
+          {
             "did": "DD69",
             "timeoutMs": 600,
             "fields": {
@@ -472,6 +499,36 @@
       },
       "slow": {
         "cellV": [
+          {
+            "did": "E554",
+            "array": {
+              "bytes": 2,
+              "factor": 0.001,
+              "min": 2.5,
+              "max": 4.4
+            },
+            "note": "fifth-generation eDrive: every cell's voltage, 2 bytes each in 112 slots, 7FFF after the last cell. Confirmed on the iX1, likely the iX3 (upstream eDrive 2.10.0)"
+          },
+          {
+            "did": "E553",
+            "fields": {
+              "min": {
+                "at": 0,
+                "bytes": 2,
+                "factor": 0.001,
+                "min": 2.5,
+                "max": 4.4
+              },
+              "max": {
+                "at": 2,
+                "bytes": 2,
+                "factor": 0.001,
+                "min": 2.5,
+                "max": 4.4
+              }
+            },
+            "note": "fifth-generation eDrive: lowest and highest cell voltage. Confirmed on the iX1, likely the iX3 (upstream eDrive 2.10.0)"
+          },
           {
             "did": "DFA5",
             "array": {

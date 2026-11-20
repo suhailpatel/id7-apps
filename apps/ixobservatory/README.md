@@ -24,7 +24,8 @@ when the app restarts or demo mode changes.
 ## Data status
 
 **G08 diagnostic readings still require vehicle validation.** Battery field
-layouts are inherited from iXDrive/eDrive. A plausible reading is not proof of
+layouts are inherited from iXDrive/eDrive; fully electric `E54D`, `E561`, `E5CE`,
+`E554` and `E553` layouts from OBDb iX3/iX captures (CC BY-SA 4.0) are tried first. A plausible reading is not proof of
 correct decoding. Live data is labelled “Candidate data”. Motor temperature has
 no verified mapping and remains unavailable, including in demo mode. There are
 no guessed nominal capacities, manual vehicle settings or claimed cooling states.

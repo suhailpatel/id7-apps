@@ -53,7 +53,7 @@ test('collector uses only reads, bounded polling, backoff and demo cancellation'
     let now=T,enabled=true,calls=0;
     const st={},m=new ChargeModel(st,spec.config);
     const diag={available:true,physical:async(ecu,sid,bytes)=>{calls++;assert.strictEqual(ecu,7);assert.strictEqual(sid,0x22);return [0x62,bytes[0],bytes[1],0x9c,0x40];}};
-    const config=Object.assign({},spec.config,{groups:{hvV:[spec.config.groups.hvV[0]]}});
+    const config=Object.assign({},spec.config,{groups:{hvV:spec.config.groups.hvV.filter(c=>c.did==='DDB4')}});
     const c=createCollector({diag,config,model:m,clock:()=>now,enabled:()=>enabled});
     await c.poll();await c.poll();assert.strictEqual(calls,1);
     now+=601000;await c.poll();assert.strictEqual(calls,1);

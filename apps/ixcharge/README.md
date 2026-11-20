@@ -1,9 +1,10 @@
 # iXCharge
 
 Independent, read-only charging dashboard for **BMW iDrive 7**, focused on the
-**G08 iX3**. App ID `ixcharge`, version **0.1.1**, logging ID `OAXC`.
-It runs without iXDrive. Diagnostic candidates are inherited from iXDrive/eDrive
-and have **not been validated on the G08**. Newer iDrive platforms are out of scope.
+**G08 iX3**. App ID `ixcharge`, version **0.1.5**, logging ID `OAXC`.
+It runs without iXDrive. Diagnostic candidates are inherited from iXDrive/eDrive;
+fully electric `E54D`/`E561`/`E5CE` layouts from OBDb iX3 captures (CC BY-SA 4.0)
+are tried first. None has **been validated on this G08**. Newer iDrive platforms are out of scope.
 
 ## Pages
 

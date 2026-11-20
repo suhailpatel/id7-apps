@@ -151,7 +151,7 @@ test('phone navigation reader bounds requests and discards replies across route 
 });
 test('collector stays read-only, bounded and parked; late replies cannot leak across demo',async()=>{
     let now=T,enabled=true,calls=0,release;
-    const m=new Pulse(),config={ecu:7,powerSign:-1,groups:{hvV:[spec.config.groups.hvV[0]],hvI:spec.config.groups.hvI}};
+    const m=new Pulse(),config={ecu:7,powerSign:-1,groups:{hvV:spec.config.groups.hvV.filter(c=>c.did==='DDB4'),hvI:spec.config.groups.hvI.filter(c=>c.did==='DD69')}};
     const diag={available:true,physical:async(ecu,sid,bytes)=>{
         calls++;assert.strictEqual(ecu,7);assert.strictEqual(sid,0x22);
         return bytes[1]===0xb4?reply('DDB4',[0x9c,0x40]):reply('DD69',[255,255,0xf8,0x30]);

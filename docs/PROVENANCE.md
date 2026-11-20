@@ -24,3 +24,14 @@ Workspace-specific changes: English-only catalog selection; a starter generator,
 test runner and CI workflow; preview output without translation instructions;
 and a runtime-test startup error handler so a blocked Unix socket fails visibly
 instead of silently skipping its checks. App code is moved without changes.
+
+## Fully electric battery identifiers
+
+The `E54D`, `E561`, `E5CE`, `E554` and `E553` candidate layouts, and the
+observation that iX3 battery units refuse `DD68`/`DD69` and answer `DDBC` with
+zeros, were ported on 20 November 2026 from upstream eDrive 2.10.0
+(`idrive7-apps` commit `c3ec187`, itself ported from elDrive 1.1.0,
+github.com/beele/eldrive). Upstream credits captures of 2021-2023 iX3s and the
+iX from the OBDb project (`OBDb/BMW-iX3`), licensed CC BY-SA 4.0. The cell
+layouts were reported as confirmed on the iX1. Attribution is retained in the
+candidate notes in each app's `app.json`. None is validated on this G08.

@@ -17,6 +17,8 @@ function decode(reply,c) {
         const n=c.array.bytes||1;
         if(bytes.length%n || bytes.length/n>512)return null;
         const cells=[];for(let at=0;at<bytes.length;at+=n)cells.push(value(bytes,c.array,at));
+        // slots after the last cell (E554 has 112, filled with 7FFF) are not cells
+        while(cells.length&&cells[cells.length-1]===null)cells.pop();
         const valid=cells.filter(number);if(!valid.length||valid.length<cells.length/2)return null;
         return {cells,min:Math.min(...valid),max:Math.max(...valid),avg:valid.reduce((a,b)=>a+b,0)/valid.length};
     }
