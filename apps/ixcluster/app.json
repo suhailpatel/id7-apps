@@ -1,0 +1,647 @@
+{
+  "id": "ixcluster",
+  "title": "iX Cluster",
+  "description": "Full-screen instrument cluster themes for the iX3: M view, Sport, Minimal, Cruise and Ribbon, with battery power and regen, charge level, battery temperature and electric range. G08 validation pending.",
+  "version": "0.1.0",
+  "vendor": "custom",
+  "loggingId": "OAXL",
+  "iconGlyph": "gauge",
+  "signals": {
+    "de.bmw.infotainment.vehicle.Vehicle2": {
+      "statusCarSpeed2": "rs"
+    },
+    "de.bmw.infotainment.vehicle.CDS2": {
+      "statusLongitudinalAccelerationMassCenter": "rs",
+      "statusLateralAccelerationMassCenter": "rs"
+    },
+    "de.bmw.infotainment.drivingexcitement.FES": {
+      "statusFESVehicleDynamicSwitchHMI": "rs"
+    },
+    "de.bmw.infrastructure.VehicleInformation": {
+      "statusGearboxDrive": "s",
+      "DataPowerTrain2": "s"
+    },
+    "de.bmw.infotainment.misc.MDrive": {
+      "dataDisplayGearbox": "s",
+      "_optional": "B (regenerative braking) next to D"
+    },
+    "com.harman.infotainment.systemfunctions.tasu.tasu.InternalTasu": {
+      "_instances": "SystemFunctionsInternalTasuInst1",
+      "_methods": [
+        "sendTasuRequest"
+      ],
+      "_broadcasts": [
+        "sendTasuResponse"
+      ]
+    },
+    "de.bmw.infotainment.drivingexcitement.Efficiencytainment2": {
+      "statusChargeOfBatteryHybrid": "rs",
+      "_optional": "Charge level as the car displays it (0.5 % per bit)"
+    },
+    "de.bmw.infotainment.KombiIF": {
+      "displayRangeElectricVehicle": "rs",
+      "_optional": "Reported electric range"
+    },
+    "de.bmw.infrastructure.EnvironmentalInformation": {
+      "ExteriorTemperature": "s",
+      "UnitBN2020": "rs"
+    },
+    "de.bmw.infrastructure.VehicleCondition": {
+      "VehicleCondition": "s",
+      "_optional": "the car switching off: no new layer while it does (cluster-render's switch-off guard)"
+    }
+  },
+  "screens": [
+    {
+      "name": "MAIN",
+      "kind": "canvas",
+      "title": "iX Cluster",
+      "buttons": [
+        [
+          "BTN_SETTINGS",
+          "All settings"
+        ]
+      ]
+    }
+  ],
+  "settings": [
+    {
+      "key": "hudLayout",
+      "label": "Theme (when not by drive mode)",
+      "type": "choice",
+      "default": "mview",
+      "options": [
+        [
+          "off",
+          "Off (BMW's own cluster)"
+        ],
+        [
+          "mview",
+          "M view"
+        ],
+        [
+          "sport",
+          "Sport"
+        ],
+        [
+          "minimal",
+          "Minimal"
+        ],
+        [
+          "cruise",
+          "Cruise"
+        ],
+        [
+          "ribbon",
+          "Ribbon"
+        ],
+        [
+          "grid",
+          "Calibration grid"
+        ],
+        [
+          "mapcal",
+          "Map calibration"
+        ]
+      ]
+    },
+    {
+      "key": "byMode",
+      "label": "Change with SPORT / COMFORT / ECO PRO",
+      "type": "bool",
+      "default": true
+    },
+    {
+      "key": "inComfort",
+      "label": "In Comfort",
+      "type": "choice",
+      "default": "mview",
+      "options": [
+        [
+          "off",
+          "Off (BMW's own cluster)"
+        ],
+        [
+          "mview",
+          "M view"
+        ],
+        [
+          "sport",
+          "Sport"
+        ],
+        [
+          "minimal",
+          "Minimal"
+        ],
+        [
+          "cruise",
+          "Cruise"
+        ],
+        [
+          "ribbon",
+          "Ribbon"
+        ]
+      ]
+    },
+    {
+      "key": "inSport",
+      "label": "In Sport",
+      "type": "choice",
+      "default": "sport",
+      "options": [
+        [
+          "off",
+          "Off (BMW's own cluster)"
+        ],
+        [
+          "mview",
+          "M view"
+        ],
+        [
+          "sport",
+          "Sport"
+        ],
+        [
+          "minimal",
+          "Minimal"
+        ],
+        [
+          "cruise",
+          "Cruise"
+        ],
+        [
+          "ribbon",
+          "Ribbon"
+        ]
+      ]
+    },
+    {
+      "key": "inEco",
+      "label": "In Eco Pro",
+      "type": "choice",
+      "default": "cruise",
+      "options": [
+        [
+          "off",
+          "Off (BMW's own cluster)"
+        ],
+        [
+          "mview",
+          "M view"
+        ],
+        [
+          "sport",
+          "Sport"
+        ],
+        [
+          "minimal",
+          "Minimal"
+        ],
+        [
+          "cruise",
+          "Cruise"
+        ],
+        [
+          "ribbon",
+          "Ribbon"
+        ]
+      ]
+    },
+    {
+      "key": "mapInTheme",
+      "label": "Show Waze map inside the theme",
+      "type": "bool",
+      "default": false
+    },
+    {
+      "key": "units",
+      "label": "Units",
+      "type": "choice",
+      "default": "us",
+      "options": [
+        [
+          "us",
+          "mph, \u00b0F"
+        ],
+        [
+          "metric",
+          "km/h, \u00b0C"
+        ]
+      ]
+    },
+    {
+      "key": "clock",
+      "label": "Clock",
+      "type": "choice",
+      "default": "12h",
+      "options": [
+        [
+          "12h",
+          "12-hour"
+        ],
+        [
+          "24h",
+          "24-hour"
+        ]
+      ]
+    },
+    {
+      "key": "timeZone",
+      "label": "Time zone (clock)",
+      "type": "number",
+      "default": -9999,
+      "steps": [
+        -9999,
+        10001,
+        10002,
+        10003,
+        10004,
+        10005,
+        10006,
+        10007,
+        10008,
+        10009,
+        10011,
+        10012,
+        10013,
+        -720,
+        -690,
+        -660,
+        -630,
+        -600,
+        -570,
+        -540,
+        -510,
+        -480,
+        -450,
+        -420,
+        -390,
+        -360,
+        -330,
+        -300,
+        -270,
+        -240,
+        -210,
+        -180,
+        -150,
+        -120,
+        -90,
+        -60,
+        -30,
+        0,
+        30,
+        60,
+        90,
+        120,
+        150,
+        180,
+        210,
+        240,
+        270,
+        300,
+        330,
+        360,
+        390,
+        420,
+        450,
+        480,
+        510,
+        540,
+        570,
+        600,
+        630,
+        660,
+        690,
+        720,
+        750,
+        780,
+        810,
+        840
+      ],
+      "labels": {
+        "-9999": "Not set (UTC)",
+        "10001": "US Eastern",
+        "10002": "US Central",
+        "10003": "US Mountain",
+        "10004": "Arizona",
+        "10005": "US Pacific",
+        "10006": "Alaska",
+        "10007": "Hawaii",
+        "10008": "Canada Atlantic",
+        "10009": "Mexico",
+        "10011": "UK, Ireland, Portugal",
+        "10012": "Central Europe",
+        "10013": "Eastern Europe",
+        "-720": "UTC-12",
+        "-690": "UTC-11:30",
+        "-660": "UTC-11",
+        "-630": "UTC-10:30",
+        "-600": "UTC-10",
+        "-570": "UTC-9:30",
+        "-540": "UTC-9",
+        "-510": "UTC-8:30",
+        "-480": "UTC-8",
+        "-450": "UTC-7:30",
+        "-420": "UTC-7",
+        "-390": "UTC-6:30",
+        "-360": "UTC-6",
+        "-330": "UTC-5:30",
+        "-300": "UTC-5",
+        "-270": "UTC-4:30",
+        "-240": "UTC-4",
+        "-210": "UTC-3:30",
+        "-180": "UTC-3",
+        "-150": "UTC-2:30",
+        "-120": "UTC-2",
+        "-90": "UTC-1:30",
+        "-60": "UTC-1",
+        "-30": "UTC-0:30",
+        "0": "UTC",
+        "30": "UTC+0:30",
+        "60": "UTC+1",
+        "90": "UTC+1:30",
+        "120": "UTC+2",
+        "150": "UTC+2:30",
+        "180": "UTC+3",
+        "210": "UTC+3:30",
+        "240": "UTC+4",
+        "270": "UTC+4:30",
+        "300": "UTC+5",
+        "330": "UTC+5:30",
+        "360": "UTC+6",
+        "390": "UTC+6:30",
+        "420": "UTC+7",
+        "450": "UTC+7:30",
+        "480": "UTC+8",
+        "510": "UTC+8:30",
+        "540": "UTC+9",
+        "570": "UTC+9:30",
+        "600": "UTC+10",
+        "630": "UTC+10:30",
+        "660": "UTC+11",
+        "690": "UTC+11:30",
+        "720": "UTC+12",
+        "750": "UTC+12:30",
+        "780": "UTC+13",
+        "810": "UTC+13:30",
+        "840": "UTC+14"
+      }
+    },
+    {
+      "key": "cameraNotch",
+      "label": "Leave room for the driver camera",
+      "type": "bool",
+      "default": false
+    },
+    {
+      "key": "holiday",
+      "label": "Holiday editions",
+      "type": "choice",
+      "default": "auto",
+      "options": [
+        [
+          "auto",
+          "Auto, by the date"
+        ],
+        [
+          "off",
+          "Off"
+        ],
+        [
+          "xmas",
+          "Christmas"
+        ],
+        [
+          "thanks",
+          "Thanksgiving"
+        ],
+        [
+          "newyear",
+          "New Year"
+        ],
+        [
+          "july4",
+          "Fourth of July"
+        ]
+      ]
+    },
+    {
+      "key": "nightDim",
+      "label": "Night colours",
+      "type": "choice",
+      "default": "auto",
+      "options": [
+        [
+          "auto",
+          "Auto (dimmer after sunset)"
+        ],
+        [
+          "off",
+          "Off"
+        ]
+      ]
+    },
+    {
+      "key": "badge",
+      "label": "Badge",
+      "type": "choice",
+      "default": "none",
+      "options": [
+        [
+          "none",
+          "None"
+        ],
+        [
+          "iX3",
+          "iX3"
+        ]
+      ]
+    },
+    {
+      "key": "badgeBMW",
+      "label": "BMW lettering on the badge",
+      "type": "bool",
+      "default": true
+    },
+    {
+      "key": "demo",
+      "label": "Demo data",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Off"
+        ],
+        [
+          "on",
+          "On"
+        ]
+      ]
+    }
+  ],
+  "config": {
+    "target": "panel",
+    "statusName": "Cluster",
+    "socketPath": "/dev/shm/cluster-render/render.sock",
+    "utcOffsetMinutes": null,
+    "waze": {
+      "comment": "Show Waze map inside the theme (shared/waze.js): waze-on-cluster's status file (read every second) and its control socket (one short 'start' command, then closed). Paths from waze-on-cluster 0.9.3.",
+      "status": "/run/waze-on-cluster/status.json",
+      "control": "/dev/shm/waze-on-cluster/ctl.sock"
+    },
+    "_comment": "target panel: the whole 1920x720 instrument cluster, drawn over BMW's gauges through cluster-render. Battery groups are iX Pulse's read-only UDS candidates (fully electric E54D/E561/E5CE first), not validated on this G08.",
+    "ecu": 7,
+    "powerSign": -1,
+    "groups": {
+      "hvV": [
+        {
+          "did": "E54D",
+          "timeoutMs": 600,
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          },
+          "note": "fully electric (fifth-generation eDrive) pack voltage: confirmed on the iX, likely the iX3. OBDb/BMW-iX3 captures (CC BY-SA 4.0), via upstream eDrive 2.10.0; not yet validated on this G08"
+        },
+        {
+          "did": "DDB4",
+          "timeoutMs": 600,
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          },
+          "note": "confirmed on the X5 45e"
+        },
+        {
+          "did": "DD68",
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          }
+        },
+        {
+          "did": "DD66",
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 150,
+              "max": 500
+            }
+          }
+        },
+        {
+          "did": "DDEF",
+          "fields": {
+            "v": {
+              "bytes": 2,
+              "factor": 1,
+              "min": 150,
+              "max": 500
+            }
+          }
+        }
+      ],
+      "hvI": [
+        {
+          "did": "E561",
+          "timeoutMs": 600,
+          "fields": {
+            "a": {
+              "bytes": 4,
+              "factor": 0.01,
+              "signed": true,
+              "min": -2000,
+              "max": 2000
+            }
+          },
+          "note": "fully electric pack current, same layout and direction as DD69 (negative = out of the pack). OBDb/BMW-iX3 captures (CC BY-SA 4.0), via upstream eDrive 2.10.0; not yet validated on this G08"
+        },
+        {
+          "did": "DD69",
+          "timeoutMs": 600,
+          "fields": {
+            "a": {
+              "bytes": 4,
+              "factor": 0.01,
+              "signed": true,
+              "min": -2000,
+              "max": 2000
+            }
+          }
+        }
+      ],
+      "soc": [
+        {
+          "did": "E5CE",
+          "fields": {
+            "pct": {
+              "bytes": 2,
+              "factor": 0.01,
+              "min": 0,
+              "max": 100
+            }
+          },
+          "note": "fully electric charge level in 0.01 %, then the lowest and highest cell's charge; displayed vs physical SOC unverified. OBDb/BMW-iX3 captures (CC BY-SA 4.0), via upstream eDrive 2.10.0; not yet validated on this G08"
+        },
+        {
+          "did": "DDBC",
+          "fields": {
+            "pct": {
+              "bytes": 2,
+              "factor": 0.1,
+              "min": 0.5,
+              "max": 100
+            }
+          },
+          "note": "min 0.5: OBDb iX3 captures answer zero here, which must not read as an empty battery"
+        }
+      ],
+      "cellT": [
+        {
+          "did": "DDC0",
+          "fields": {
+            "min": {
+              "at": 0,
+              "bytes": 2,
+              "factor": 0.01,
+              "signed": true,
+              "min": -40,
+              "max": 80
+            },
+            "max": {
+              "at": 2,
+              "bytes": 2,
+              "factor": 0.01,
+              "signed": true,
+              "min": -40,
+              "max": 80
+            },
+            "avg": {
+              "at": 4,
+              "bytes": 2,
+              "factor": 0.01,
+              "signed": true,
+              "min": -40,
+              "max": 80
+            }
+          }
+        }
+      ]
+    },
+    "provenance": "Inherited iXDrive/eDrive battery diagnostic candidates. Not validated on G08 iX3."
+  }
+}

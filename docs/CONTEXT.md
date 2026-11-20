@@ -605,3 +605,25 @@ Trip Capsule requiring iXDrive `0.1.1`. Current versions are recorded below.
   autostart, `fastkw.js` and `battery12.js`. Whether `E5CE` is displayed or
   physical SOC is unknown. iXDrive 0.2.5, Trip Capsule 0.1.10, iXCharge 0.1.5,
   Observatory 0.1.6, iX Pulse 0.1.11. Nothing installed on the car or pushed.
+
+## iX Cluster — 20 November 2026
+
+- User asked to clone bimmer-lab's Cluster Themes (`../bimmer-lab-apps`, MIT) into a
+  new app with iX3-suitable themes, chose a focused first batch (M view, Sport,
+  Minimal, Cruise, Ribbon) and the name **iX Cluster**. Created with `npm run
+  new:app`: ID `ixcluster`, logging ID `OAXL`, version `0.1.0`. Not added to the
+  Store build (publishing is opt-in); no commit, install or push.
+- Forked engine (hud.js, shaders, page, layouts, fonts) with EV data: `evcar.js`
+  (own expiring model; iX Pulse's read-only UDS collector for kW/temperature;
+  Efficiencytainment2 SOC at 0.5 %/bit; KombiIF EV range in the car's unit; P R N D,
+  B from MDrive) and `evtokens.js` (power on a labelled display scale ≥100 kW that
+  grows with the run's peak, in memory only; regen in eDrive blue; REGEN only while
+  moving). Engine DME/OBD/HV polling, fuel, boost, tyres, media, shift scoring writes,
+  0-60 runs and the scripted Play demo are removed or inert. Demo is explicit (off by
+  default), flagged with a DEMO tag and never reads the car.
+- Fonts with `B`, `-`, `/` re-baked (`kit/tools/bake_ixcluster_fonts.py`; cell heights
+  unchanged). Theme pictures shot on the ported WebGL bench (`kit/bench`,
+  `BENCH_SHOT=1`, `kit/tools/ixcluster_previews.py`). All five themes and the page
+  were rendered and reviewed. Tests: `kit/tools/test_ixcluster.js` (seven checks).
+- Unvalidated on the G08: diagnostic battery candidates, feed delivery, cluster
+  placement on the iX3, cluster-render coexistence with iX Pulse's projection.

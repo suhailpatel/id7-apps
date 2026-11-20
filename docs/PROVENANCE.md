@@ -35,3 +35,14 @@ github.com/beele/eldrive). Upstream credits captures of 2021-2023 iX3s and the
 iX from the OBDb project (`OBDb/BMW-iX3`), licensed CC BY-SA 4.0. The cell
 layouts were reported as confirmed on the iX1. Attribution is retained in the
 candidate notes in each app's `app.json`. None is validated on this G08.
+
+## iX Cluster
+
+`apps/ixcluster` was adapted on 20 November 2026 from bimmer-lab's Cluster Themes 0.19.0
+(github.com/bimmer-lab/apps, commit `ab81cee`), MIT:
+the shared engine, the M view, Sport, Minimal, Cruise and Ribbon layouts, shaders,
+page, theme fonts and its bench (`kit/bench`, with `kit/tools/shader_budget.js`).
+Font atlases that gained characters were re-baked with a copy of its `bake()`
+(`kit/tools/bake_ixcluster_fonts.py`). Its own third-party notices (MGU App Kit,
+cluster-render client MPL-2.0, Barlow / Michroma / Orbitron / DSEG7 / Outfit OFL,
+EVAHUD and the M view port) are kept in `apps/ixcluster/NOTICE`.
